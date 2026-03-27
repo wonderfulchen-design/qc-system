@@ -5,6 +5,10 @@ QC Quality Management System - Backend API
 All error messages in English to avoid encoding issues
 """
 
+# MySQL 兼容层 - 使用 PyMySQL 替代 MySQLdb
+import pymysql
+pymysql.install_as_MySQLdb()
+
 from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile, Form, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
