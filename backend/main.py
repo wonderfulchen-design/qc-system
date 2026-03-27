@@ -343,6 +343,51 @@ async def get_current_user_info(
     return current_user
 
 
+@app.post("/api/init-db")
+async def initialize_database(
+    db: Session = Depends(get_db)
+):
+    """初始化数据库 - 创建表和 admin 账号"""
+    try:
+        # 创建所有表
+        Base.metadata.create_all(bind=engine)
+        
+        # 检查是否已有 admin 账号
+        admin = db.query(QCUser).filter(QCUser.username == "admin").first()
+        
+        if not admin:
+            # 创建 admin 账号（密码：admin123）
+            admin = QCUser(
+                username="admin",
+                password_hash=hash_password("admin123"),
+                real_name="系统管理员",
+                role="admin",
+                status=1
+            )
+            db.add(admin)
+            db.commit()
+            
+            return {
+                "success": True,
+                "message": "数据库初始化成功！admin 账号已创建。",
+                "admin": {
+                    "username": "admin",
+                    "password": "admin123"
+                }
+            }
+        else:
+            return {
+                "success": True,
+                "message": "数据库已初始化，admin 账号已存在。"
+            }
+    except Exception as e:
+        db.rollback()
+        return {
+            "success": False,
+            "message": f"初始化失败：{str(e)}"
+        }
+
+
 @app.put("/api/user/nickname", response_model=UserResponse)
 async def update_nickname(
     nickname_data: dict,
