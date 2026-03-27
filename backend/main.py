@@ -279,6 +279,7 @@ app.add_middleware(
 
 # 静态文件挂载
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
+app.mount("/qc-mobile", StaticFiles(directory="mobile", html=True), name="mobile")
 
 # 根路径重定向到问题列表页
 @app.get("/")
