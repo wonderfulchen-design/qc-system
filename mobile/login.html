@@ -354,7 +354,7 @@
         formData.append('password', password);
 
         // 调用登录接口
-        const response = await fetch(`${API_BASE}/api/token`, {
+        const response = await fetch(`${API_BASE}/token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
