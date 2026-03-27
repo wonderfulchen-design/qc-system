@@ -280,6 +280,13 @@ app.add_middleware(
 # 静态文件挂载
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
+# 根路径重定向到问题列表页
+@app.get("/")
+async def root_redirect():
+    """根路径自动跳转到问题列表页"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/qc-mobile/issue-list.html")
+
 
 # ==================== Exception Handler ====================
 
