@@ -343,6 +343,7 @@ async def get_current_user_info(
     return current_user
 
 
+@app.get("/api/init-db")
 @app.post("/api/init-db")
 async def initialize_database(
     db: Session = Depends(get_db)
