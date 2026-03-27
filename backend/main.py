@@ -343,6 +343,79 @@ async def get_current_user_info(
     return current_user
 
 
+@app.post("/api/batches/import-csv")
+async def import_batches_from_csv(
+    file: UploadFile = File(...),
+    current_user: QCUser = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """从 CSV 文件批量导入波次数据"""
+    import pandas as pd
+    import io
+    
+    try:
+        # 读取 CSV 文件
+        contents = await file.read()
+        df = pd.read_csv(io.BytesIO(contents), encoding='utf-8-sig')
+        
+        success_count = 0
+        error_count = 0
+        errors = []
+        
+        for idx, row in df.iterrows():
+            try:
+                batch_no = str(row.get('波次号', '')).strip()
+                factory_name = str(row.get('工厂', '')).strip()
+                goods_no = str(row.get('货品编码', '')).strip()
+                merchandiser = str(row.get('订单跟单员', '')).strip() if pd.notna(row.get('订单跟单员')) else None
+                designer = str(row.get('设计师', '')).strip() if pd.notna(row.get('设计师')) else None
+                
+                if not batch_no or not factory_name or not goods_no:
+                    error_count += 1
+                    errors.append({"row": idx + 1, "error": "缺少必填字段"})
+                    continue
+                
+                # 检查是否已存在
+                existing = db.query(ProductBatch).filter(
+                    ProductBatch.batch_no == batch_no
+                ).first()
+                
+                if existing:
+                    existing.factory_name = factory_name
+                    existing.goods_no = goods_no
+                    existing.merchandiser = merchandiser
+                    existing.designer = designer
+                else:
+                    new_batch = ProductBatch(
+                        batch_no=batch_no,
+                        factory_name=factory_name,
+                        goods_no=goods_no,
+                        merchandiser=merchandiser,
+                        designer=designer
+                    )
+                    db.add(new_batch)
+                
+                success_count += 1
+                
+            except Exception as e:
+                error_count += 1
+                errors.append({"row": idx + 1, "error": str(e)})
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": f"导入完成！成功：{success_count}, 失败：{error_count}",
+            "success_count": success_count,
+            "error_count": error_count,
+            "errors": errors[:10]
+        }
+        
+    except Exception as e:
+        db.rollback()
+        return {"success": False, "message": f"导入失败：{str(e)}"}
+
+
 @app.get("/api/init-db")
 @app.post("/api/init-db")
 async def initialize_database(
