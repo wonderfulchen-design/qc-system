@@ -1,0 +1,168 @@
+{
+  "total": 10198,
+  "page": 1,
+  "page_size": 10,
+  "data": [
+    {
+      "id": 10205,
+      "issue_no": "Q20260325223047879E",
+      "goods_no": "25928788554",
+      "factory_name": "易茂",
+      "issue_type": "拉链",
+      "issue_desc": "图片测试 #100 - 800x800 像素",
+      "solution_type": "现金补偿",
+      "compensation_amount": 0,
+      "product_image": "/uploads/1_20260325223047.jpg",
+      "issue_images": [
+        "/uploads/1_20260325223047.jpg",
+        "/uploads/1_20260325223047.jpg"
+      ],
+      "created_at": "2026-03-25T22:54:33"
+    },
+    {
+      "id": 10204,
+      "issue_no": "Q2026032522304775D4",
+      "goods_no": "23437852514",
+      "factory_name": "乙超",
+      "issue_type": "其他",
+      "issue_desc": "图片测试 #99 - 800x800 像素",
+      "solution_type": "退货",
+      "compensation_amount": 20.0,
+      "product_image": "/uploads/1_20260325223047.jpg",
+      "issue_images": [
+        "/uploads/1_20260325223047.jpg"
+      ],
+      "created_at": "2026-03-25T22:54:33"
+    },
+    {
+      "id": 10203,
+      "issue_no": "Q20260325223047EB33",
+      "goods_no": "24231285932",
+      "factory_name": "浩迅",
+      "issue_type": "污渍",
+      "issue_desc": "图片测试 #98 - 800x800 像素",
+      "solution_type": "补偿",
+      "compensation_amount": 0,
+      "product_image": "/uploads/1_20260325223046.jpg",
+      "issue_images": [
+        "/uploads/1_20260325223046.jpg",
+        "/uploads/1_20260325223046.jpg",
+        "/uploads/1_20260325223047.jpg"
+      ],
+      "created_at": "2026-03-25T22:54:33"
+    },
+    {
+      "id": 10202,
+      "issue_no": "Q202603252230462B41",
+      "goods_no": "23061440368",
+      "factory_name": "乙超",
+      "issue_type": "色差",
+      "issue_desc": "图片测试 #97 - 800x800 像素",
+      "solution_type": "现金补偿",
+      "compensation_amount": 20.0,
+      "product_image": "/uploads/1_20260325223046.jpg",
+      "issue_images": [
+        "/uploads/1_20260325223046.jpg",
+        "/uploads/1_20260325223046.jpg",
+        "/uploads/1_20260325223046.jpg"
+      ],
+      "created_at": "2026-03-25T22:54:33"
+    },
+    {
+      "id": 10201,
+      "issue_no": "Q20260325223045D059",
+      "goods_no": "23977987239",
+      "factory_name": "浩迅",
+      "issue_type": "其他",
+      "issue_desc": "图片测试 #96 - 800x800 像素",
+      "solution_type": "返工",
+      "compensation_amount": 0,
+      "product_image": "/uploads/1_20260325223045.jpg",
+      "issue_images": [
+        "/uploads/1_20260325223045.jpg",
+        "/uploads/1_20260325223045.jpg",
+        "/uploads/1_20260325223045.jpg"
+      ],
+      "created_at": "2026-03-25T22:54:33"
+    },
+    {
+      "id": 10200,
+      "issue_no": "Q20260325223045A3B6",
+      "goods_no": "24313957480",
+      "factory_name": "乙超",
+      "issue_type": "起球勾线掉毛",
+      "issue_desc": "图片测试 #95 - 800x800 像素",
+      "solution_type": "现金补偿",
+      "compensation_amount": 5.0,
+      "product_image": "/uploads/1_20260325223045.jpg",
+      "issue_images": [
+        "/uploads/1_20260325223045.jpg",
+        "/uploads/1_20260325223045.jpg"
+      ],
+      "created_at": "2026-03-25T22:54:33"
+    },
+    {
+      "id": 10199,
+      "issue_no": "Q202603252230443C9D",
+      "goods_no": "25305048215",
+      "factory_name": "三米",
+      "issue_type": "掉色",
+      "issue_desc": "图片测试 #94 - 800x800 像素",
+      "solution_type": "补偿",
+      "compensation_amount": 5.0,
+      "product_image": "/uploads/1_20260325223044.jpg",
+      "issue_images": [
+        "/uploads/1_20260325223044.jpg"
+      ],
+      "created_at": "2026-03-25T22:54:33"
+    },
+    {
+      "id": 10198,
+      "issue_no": "Q20260325223044CFF3",
+      "goods_no": "25343196310",
+      "factory_name": "春秋",
+      "issue_type": "色差",
+      "issue_desc": "图片测试 #93 - 800x800 像素",
+      "solution_type": "补偿",
+      "compensation_amount": 10.0,
+      "product_image": "/uploads/1_20260325223044.jpg",
+      "issue_images": [
+        "/uploads/1_20260325223044.jpg",
+        "/uploads/1_20260325223044.jpg"
+      ],
+      "created_at": "2026-03-25T22:54:33"
+    },
+    {
+      "id": 10197,
+      "issue_no": "Q202603252230441439",
+      "goods_no": "23312179573",
+      "factory_name": "三米",
+      "issue_type": "扣子",
+      "issue_desc": "图片测试 #92 - 800x800 像素",
+      "solution_type": "补偿",
+      "compensation_amount": 10.0,
+      "product_image": "/uploads/1_20260325223043.jpg",
+      "issue_images": [
+        "/uploads/1_20260325223044.jpg"
+      ],
+      "created_at": "2026-03-25T22:54:33"
+    },
+    {
+      "id": 10196,
+      "issue_no": "Q202603252230435C40",
+      "goods_no": "25005835753",
+      "factory_name": "易茂",
+      "issue_type": "污渍",
+      "issue_desc": "图片测试 #91 - 800x800 像素",
+      "solution_type": "换货",
+      "compensation_amount": 0,
+      "product_image": "/uploads/1_20260325223043.jpg",
+      "issue_images": [
+        "/uploads/1_20260325223043.jpg",
+        "/uploads/1_20260325223043.jpg",
+        "/uploads/1_20260325223043.jpg"
+      ],
+      "created_at": "2026-03-25T22:54:33"
+    }
+  ]
+}

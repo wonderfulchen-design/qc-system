@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>测试修复</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .test-card { 
+      border: 1px solid #ddd; 
+      padding: 15px; 
+      margin: 10px 0; 
+      border-radius: 8px; 
+      cursor: pointer;
+      background: #f9f9f9;
+    }
+    .test-card:hover { background: #e8f4ff; }
+    .result { 
+      margin-top: 20px; 
+      padding: 15px; 
+      background: #e8f5e9; 
+      border-radius: 8px; 
+      display: none;
+    }
+    .result.show { display: block; }
+    .error { background: #ffebee; color: #c62828; }
+    .success { background: #e8f5e9; color: #2e7d32; }
+  </style>
+</head>
+<body>
+  <h1>问题详情页修复测试</h1>
+  
+  <h2>测试 1: 普通问题编号</h2>
+  <div class="test-card" data-issue-no="Q202603271128215881ED01" onclick="handleCardClick(this)">
+    点击我 - 问题编号：Q202603271128215881ED01
+  </div>
+  
+  <h2>测试 2: 包含特殊字符的问题编号</h2>
+  <div class="test-card" data-issue-no="Q20260327'\"TEST" onclick="handleCardClick(this)">
+    点击我 - 问题编号：Q20260327'"TEST (包含引号)
+  </div>
+  
+  <h2>测试 3: 中文问题编号</h2>
+  <div class="test-card" data-issue-no="测试 20260327001" onclick="handleCardClick(this)">
+    点击我 - 问题编号：测试 20260327001
+  </div>
+  
+  <div id="result" class="result"></div>
+  
+  <script>
+    function handleCardClick(cardElement) {
+      const issueNo = cardElement.getAttribute('data-issue-no');
+      const resultDiv = document.getElementById('result');
+      
+      if (issueNo) {
+        // 模拟跳转
+        const targetUrl = `/qc-mobile/issue-detail.html?no=${encodeURIComponent(issueNo)}`;
+        resultDiv.className = 'result show success';
+        resultDiv.innerHTML = `
+          <strong>✅ 成功！</strong><br>
+          问题编号：${issueNo}<br>
+          跳转 URL: ${targetUrl}<br>
+          <br>
+          <small>实际项目中会跳转到：${targetUrl}</small>
+        `;
+        
+        // 实际项目中取消下面这行的注释
+        // window.location.href = targetUrl;
+      } else {
+        resultDiv.className = 'result show error';
+        resultDiv.innerHTML = '<strong>❌ 失败！</strong> 未找到问题编号';
+      }
+    }
+    
+    // 自动测试
+    window.addEventListener('DOMContentLoaded', function() {
+      console.log('✅ 页面加载完成');
+      console.log('✅ handleCardClick 函数已定义');
+      console.log('✅ 测试页面就绪');
+    });
+  </script>
+</body>
+</html>

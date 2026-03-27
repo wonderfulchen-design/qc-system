@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>我的考核 - QC 质量管理系统</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f6f8; min-height: 100vh; padding-bottom: 70px; }
+    
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 20px; text-align: center; }
+    .avatar { width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 15px; }
+    .user-name { font-size: 20px; font-weight: 600; margin-bottom: 5px; }
+    .user-dept { font-size: 14px; opacity: 0.8; }
+    
+    .score-card { background: #fff; margin: -30px 15px 15px; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
+    .score-label { font-size: 14px; color: #999; margin-bottom: 10px; }
+    .score-value { font-size: 48px; font-weight: bold; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .score-rank { font-size: 14px; color: #666; margin-top: 10px; }
+    .score-level { display: inline-block; padding: 6px 20px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: #fff; border-radius: 20px; font-size: 14px; margin-top: 10px; }
+    
+    .metrics-section { background: #fff; margin: 15px; padding: 20px 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .section-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 20px; }
+    
+    .metric-item { margin-bottom: 20px; }
+    .metric-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .metric-name { font-size: 14px; color: #333; font-weight: 500; }
+    .metric-value { font-size: 14px; color: #667eea; font-weight: 600; }
+    .metric-bar { height: 8px; background: #f5f6f8; border-radius: 4px; overflow: hidden; }
+    .metric-fill { height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); border-radius: 4px; transition: width 0.5s; }
+    .metric-target { font-size: 12px; color: #999; margin-top: 5px; }
+    
+    .work-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+    .stat-box { background: #f8f9fa; border-radius: 10px; padding: 15px 10px; text-align: center; }
+    .stat-value { font-size: 20px; font-weight: bold; color: #667eea; margin-bottom: 5px; }
+    .stat-label { font-size: 12px; color: #999; }
+    
+    .history-section { background: #fff; margin: 15px; padding: 20px 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .history-list { }
+    .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f0f0f0; }
+    .history-item:last-child { border-bottom: none; }
+    .history-month { font-size: 14px; color: #333; font-weight: 500; }
+    .history-score { font-size: 16px; font-weight: 600; color: #667eea; }
+    .history-level { padding: 4px 12px; border-radius: 12px; font-size: 12px; }
+    .history-level.a { background: #d4edda; color: #155724; }
+    .history-level.b { background: #fff3cd; color: #856404; }
+    .history-level.c { background: #e2e3e5; color: #383d41; }
+    
+    .menu-list { background: #fff; margin: 15px; border-radius: 12px; overflow: hidden; }
+    .menu-item { display: flex; align-items: center; padding: 18px 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-icon { width: 40px; height: 40px; background: #f5f6f8; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 15px; }
+    .menu-text { flex: 1; font-size: 15px; color: #333; }
+    .menu-arrow { color: #ccc; font-size: 18px; }
+    
+    .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; display: flex; justify-content: space-around; padding: 8px 0; border-top: 1px solid #f0f0f0; z-index: 100; }
+    .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; color: #999; font-size: 11px; }
+    .tab-item.active { color: #667eea; }
+    .tab-icon { font-size: 22px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="avatar">👤</div>
+    <div class="user-name" id="userName">张三</div>
+    <div class="user-dept">质检部 · QC 专员</div>
+  </div>
+
+  <div class="score-card">
+    <div class="score-label">2025 年 3 月 综合评分</div>
+    <div class="score-value" id="totalScore">87.5</div>
+    <div class="score-rank">团队排名：<strong>3 / 12</strong></div>
+    <div class="score-level" id="performanceLevel">B+ 良好</div>
+  </div>
+
+  <div class="metrics-section">
+    <div class="section-title">📊 考核维度</div>
+    
+    <div class="metric-item">
+      <div class="metric-header">
+        <span class="metric-name">检验工作量</span>
+        <span class="metric-value">85 分</span>
+      </div>
+      <div class="metric-bar">
+        <div class="metric-fill" style="width: 85%;"></div>
+      </div>
+      <div class="metric-target">权重 25% | 目标：≥1000 件 | 实际：850 件</div>
+    </div>
+
+    <div class="metric-item">
+      <div class="metric-header">
+        <span class="metric-name">漏检率</span>
+        <span class="metric-value">92 分</span>
+      </div>
+      <div class="metric-bar">
+        <div class="metric-fill" style="width: 92%;"></div>
+      </div>
+      <div class="metric-target">权重 30% | 目标：≤2% | 实际：1.5%</div>
+    </div>
+
+    <div class="metric-item">
+      <div class="metric-header">
+        <span class="metric-name">问题发现率</span>
+        <span class="metric-value">75 分</span>
+      </div>
+      <div class="metric-bar">
+        <div class="metric-fill" style="width: 75%;"></div>
+      </div>
+      <div class="metric-target">权重 20% | 目标：≥5% | 实际：4.2%</div>
+    </div>
+
+    <div class="metric-item">
+      <div class="metric-header">
+        <span class="metric-name">响应时效</span>
+        <span class="metric-value">100 分</span>
+      </div>
+      <div class="metric-bar">
+        <div class="metric-fill" style="width: 100%;"></div>
+      </div>
+      <div class="metric-target">权重 15% | 目标：≤4h | 实际：2.8h</div>
+    </div>
+
+    <div class="metric-item">
+      <div class="metric-header">
+        <span class="metric-name">数据完整性</span>
+        <span class="metric-value">90 分</span>
+      </div>
+      <div class="metric-bar">
+        <div class="metric-fill" style="width: 90%;"></div>
+      </div>
+      <div class="metric-target">权重 10% | 目标：≥98% | 实际：98.5%</div>
+    </div>
+  </div>
+
+  <div class="metrics-section">
+    <div class="section-title">📈 本月工作统计</div>
+    <div class="work-stats">
+      <div class="stat-box">
+        <div class="stat-value" id="totalInspec">45</div>
+        <div class="stat-label">检验批次</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="totalPieces">850</div>
+        <div class="stat-label">检验件数</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="issuesFound">36</div>
+        <div class="stat-label">发现问题</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="history-section">
+    <div class="section-title">📋 历史考核记录</div>
+    <div class="history-list">
+      <div class="history-item">
+        <div>
+          <div class="history-month">2025-02</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="history-level b">B</span>
+          <span class="history-score">85.2</span>
+        </div>
+      </div>
+      <div class="history-item">
+        <div>
+          <div class="history-month">2025-01</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="history-level b">B</span>
+          <span class="history-score">82.8</span>
+        </div>
+      </div>
+      <div class="history-item">
+        <div>
+          <div class="history-month">2024-12</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="history-level c">C</span>
+          <span class="history-score">79.5</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="menu-list">
+    <div class="menu-item" onclick="alert('功能开发中')">
+      <div class="menu-icon">⚙️</div>
+      <div class="menu-text">个人设置</div>
+      <div class="menu-arrow">›</div>
+    </div>
+    <div class="menu-item" onclick="alert('功能开发中')">
+      <div class="menu-icon">🔔</div>
+      <div class="menu-text">消息通知</div>
+      <div class="menu-arrow">›</div>
+    </div>
+    <div class="menu-item" onclick="logout()">
+      <div class="menu-icon">🚪</div>
+      <div class="menu-text">退出登录</div>
+      <div class="menu-arrow">›</div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab-item" onclick="switchTab('/qc-mobile/index.html')">
+      <span class="tab-icon">🏠</span>
+      <span>首页</span>
+    </div>
+    <div class="tab-item" onclick="switchTab('/qc-mobile/issue-list.html')">
+      <span class="tab-icon">📝</span>
+      <span>录入</span>
+    </div>
+    <div class="tab-item" onclick="switchTab('/qc-mobile/stats.html')">
+      <span class="tab-icon">📊</span>
+      <span>统计</span>
+    </div>
+    <div class="tab-item active" onclick="switchTab('/qc-mobile/performance.html')">
+      <span class="tab-icon">👤</span>
+      <span>我的</span>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+
+    window.addEventListener('DOMContentLoaded', function() {
+      checkLogin();
+      loadPerformance();
+    });
+
+    function checkLogin() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = '/qc-mobile/login.html';
+        return;
+      }
+
+      const userInfo = localStorage.getItem('userInfo');
+      if (userInfo) {
+        const user = JSON.parse(userInfo);
+        document.getElementById('userName').textContent = user.username || user.user_name || '用户';
+      }
+    }
+
+    function switchTab(url) {
+      window.location.href = url;
+    }
+
+    async function loadPerformance() {
+      const token = localStorage.getItem('token');
+      try {
+        const response = await fetch(`${API_BASE}/api/qc/performance`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const perf = await response.json();
+          document.getElementById('totalScore').textContent = perf.score?.toFixed(1) || '0';
+          document.getElementById('totalInspec').textContent = perf.total_inspections || '0';
+          document.getElementById('totalPieces').textContent = perf.total_pieces || '0';
+          document.getElementById('issuesFound').textContent = perf.issues_found || '0';
+          
+          const levelMap = { 'A': 'A 优秀', 'B': 'B 良好', 'C': 'C 一般', 'D': 'D 需改进' };
+          document.getElementById('performanceLevel').textContent = levelMap[perf.performance_level] || 'B 良好';
+        }
+      } catch (error) {
+        console.error('加载考核数据失败:', error);
+      }
+    }
+
+    function logout() {
+      if (confirm('确定要退出登录吗？')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userInfo');
+        window.location.href = '/qc-mobile/login.html';
+      }
+    }
+  </script>
+</body>
+</html>

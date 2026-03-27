@@ -1,0 +1,115 @@
+QC System - 问题列表翻页速度测试报告
+测试时间：2026-03-26 06:37:38
+API 地址：http://localhost:8000
+页面大小：20
+测试页数：100
+总数据量：10299
+
+性能指标:
+成功率：100.0%
+平均响应时间：10.93 ms
+中位数时间：5.88 ms
+P95 响应时间：29.05 ms
+评级：EXCELLENT [5/5]
+
+详细数据:
+Page 1: 5.75 ms - success
+Page 2: 4.95 ms - success
+Page 3: 5.54 ms - success
+Page 4: 4.64 ms - success
+Page 5: 5.09 ms - success
+Page 6: 5.54 ms - success
+Page 7: 29.57 ms - success
+Page 8: 5.10 ms - success
+Page 9: 29.05 ms - success
+Page 10: 35.46 ms - success
+Page 11: 6.74 ms - success
+Page 12: 4.77 ms - success
+Page 13: 4.87 ms - success
+Page 14: 4.67 ms - success
+Page 15: 19.14 ms - success
+Page 16: 5.15 ms - success
+Page 17: 5.32 ms - success
+Page 18: 22.10 ms - success
+Page 19: 14.97 ms - success
+Page 20: 16.97 ms - success
+Page 21: 16.34 ms - success
+Page 22: 5.26 ms - success
+Page 23: 5.06 ms - success
+Page 24: 5.21 ms - success
+Page 25: 13.35 ms - success
+Page 26: 4.80 ms - success
+Page 27: 5.99 ms - success
+Page 28: 5.93 ms - success
+Page 29: 4.85 ms - success
+Page 30: 4.68 ms - success
+Page 31: 5.37 ms - success
+Page 32: 15.40 ms - success
+Page 33: 15.96 ms - success
+Page 34: 17.15 ms - success
+Page 35: 5.63 ms - success
+Page 36: 26.70 ms - success
+Page 37: 6.58 ms - success
+Page 38: 25.29 ms - success
+Page 39: 14.53 ms - success
+Page 40: 5.66 ms - success
+Page 41: 23.98 ms - success
+Page 42: 15.59 ms - success
+Page 43: 5.18 ms - success
+Page 44: 5.16 ms - success
+Page 45: 5.25 ms - success
+Page 46: 15.88 ms - success
+Page 47: 5.18 ms - success
+Page 48: 5.25 ms - success
+Page 49: 21.90 ms - success
+Page 50: 5.51 ms - success
+Page 51: 5.66 ms - success
+Page 52: 5.12 ms - success
+Page 53: 5.10 ms - success
+Page 54: 5.14 ms - success
+Page 55: 5.61 ms - success
+Page 56: 5.05 ms - success
+Page 57: 25.62 ms - success
+Page 58: 15.07 ms - success
+Page 59: 16.86 ms - success
+Page 60: 36.30 ms - success
+Page 61: 7.14 ms - success
+Page 62: 6.16 ms - success
+Page 63: 5.28 ms - success
+Page 64: 5.35 ms - success
+Page 65: 5.69 ms - success
+Page 66: 5.11 ms - success
+Page 67: 6.06 ms - success
+Page 68: 6.81 ms - success
+Page 69: 25.64 ms - success
+Page 70: 15.65 ms - success
+Page 71: 16.36 ms - success
+Page 72: 15.92 ms - success
+Page 73: 15.31 ms - success
+Page 74: 15.89 ms - success
+Page 75: 15.33 ms - success
+Page 76: 6.29 ms - success
+Page 77: 5.96 ms - success
+Page 78: 5.56 ms - success
+Page 79: 30.67 ms - success
+Page 80: 15.39 ms - success
+Page 81: 15.60 ms - success
+Page 82: 15.33 ms - success
+Page 83: 5.56 ms - success
+Page 84: 27.66 ms - success
+Page 85: 6.14 ms - success
+Page 86: 5.59 ms - success
+Page 87: 5.49 ms - success
+Page 88: 5.48 ms - success
+Page 89: 7.39 ms - success
+Page 90: 5.59 ms - success
+Page 91: 5.61 ms - success
+Page 92: 18.41 ms - success
+Page 93: 5.83 ms - success
+Page 94: 5.34 ms - success
+Page 95: 5.44 ms - success
+Page 96: 6.14 ms - success
+Page 97: 5.50 ms - success
+Page 98: 18.47 ms - success
+Page 99: 5.77 ms - success
+Page 100: 5.47 ms - success

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>统计分析 - QC 质量管理系统</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f6f8; min-height: 100vh; padding-bottom: 70px; }
+    
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 15px 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 100; }
+    .back-btn { font-size: 24px; cursor: pointer; }
+    .header h1 { font-size: 18px; font-weight: 600; flex: 1; }
+    
+    .date-selector { background: #fff; padding: 15px; display: flex; justify-content: center; gap: 10px; }
+    .date-btn { padding: 8px 16px; border: 1px solid #ddd; border-radius: 20px; background: #fff; font-size: 13px; cursor: pointer; }
+    .date-btn.active { background: #667eea; color: #fff; border-color: #667eea; }
+    
+    .stats-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 15px; }
+    .stat-card { background: #fff; border-radius: 12px; padding: 20px 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .stat-value { font-size: 28px; font-weight: bold; color: #667eea; margin-bottom: 5px; }
+    .stat-label { font-size: 13px; color: #999; }
+    .stat-card.warning .stat-value { color: #ff9f43; }
+    .stat-card.danger .stat-value { color: #ff4757; }
+    .stat-card.success .stat-value { color: #11998e; }
+    
+    .chart-section { background: #fff; margin: 0 15px 15px; padding: 20px 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .section-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 15px; }
+    
+    .bar-chart { }
+    .bar-item { display: flex; align-items: center; margin-bottom: 12px; }
+    .bar-label { width: 80px; font-size: 13px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bar-container { flex: 1; height: 24px; background: #f5f6f8; border-radius: 12px; overflow: hidden; }
+    .bar-fill { height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); border-radius: 12px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; color: #fff; font-weight: 600; transition: width 0.5s; }
+    .bar-value { width: 50px; text-align: right; font-size: 13px; color: #333; margin-left: 8px; }
+    
+    .pie-chart { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; }
+    .pie-legend { display: flex; flex-direction: column; gap: 10px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .legend-color { width: 12px; height: 12px; border-radius: 3px; }
+    
+    .rank-list { }
+    .rank-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+    .rank-item:last-child { border-bottom: none; }
+    .rank-num { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: #fff; margin-right: 12px; flex-shrink: 0; }
+    .rank-num.gold { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); }
+    .rank-num.silver { background: linear-gradient(135deg, #cfcfcf 0%, #a0a0a0 100%); }
+    .rank-num.bronze { background: linear-gradient(135deg, #cd7f32 0%, #b87333 100%); }
+    .rank-num.normal { background: #e0e0e0; color: #666; }
+    .rank-name { flex: 1; font-size: 14px; color: #333; }
+    .rank-value { font-size: 14px; font-weight: 600; color: #ff4757; }
+    
+    .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; display: flex; justify-content: space-around; padding: 8px 0; border-top: 1px solid #f0f0f0; z-index: 100; }
+    .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; color: #999; font-size: 11px; }
+    .tab-item.active { color: #667eea; }
+    .tab-icon { font-size: 22px; }
+    
+    .loading { text-align: center; padding: 40px; color: #999; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="back-btn" onclick="goBack()">←</span>
+    <h1>统计分析</h1>
+  </div>
+
+  <div class="date-selector">
+    <button class="date-btn" data-days="7">近 7 天</button>
+    <button class="date-btn" data-days="30">近 30 天</button>
+    <button class="date-btn active" data-days="90">近 90 天</button>
+    <button class="date-btn" data-days="365">全年</button>
+  </div>
+
+  <!-- 核心指标 -->
+  <div class="stats-cards">
+    <div class="stat-card">
+      <div class="stat-value" id="totalIssues">-</div>
+      <div class="stat-label">总问题数</div>
+    </div>
+    <div class="stat-card warning">
+      <div class="stat-value" id="totalCompensation">-</div>
+      <div class="stat-label">补偿金额 (元)</div>
+    </div>
+    <div class="stat-card danger">
+      <div class="stat-value" id="factoryCount">-</div>
+      <div class="stat-label">涉及工厂</div>
+    </div>
+    <div class="stat-card success">
+      <div class="stat-value" id="solveRate">-</div>
+      <div class="stat-label">解决率</div>
+    </div>
+  </div>
+
+  <!-- 问题趋势 -->
+  <div class="chart-section">
+    <div class="section-title">📈 问题趋势</div>
+    <div class="bar-chart" id="trendChart">
+      <div class="loading">加载中...</div>
+    </div>
+  </div>
+
+  <!-- 问题类型分布 -->
+  <div class="chart-section">
+    <div class="section-title">🏷️ 问题类型分布</div>
+    <div class="pie-chart" id="typeChart">
+      <div class="loading">加载中...</div>
+    </div>
+  </div>
+
+  <!-- 工厂问题 TOP5 -->
+  <div class="chart-section">
+    <div class="section-title">🏭 工厂问题 TOP5</div>
+    <div class="rank-list" id="factoryRank">
+      <div class="loading">加载中...</div>
+    </div>
+  </div>
+
+  <!-- 平台分布 -->
+  <div class="chart-section">
+    <div class="section-title">📱 平台分布</div>
+    <div class="bar-chart" id="platformChart">
+      <div class="loading">加载中...</div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab-item" onclick="switchTab('/qc-mobile/index.html')">
+      <span class="tab-icon">🏠</span>
+      <span>首页</span>
+    </div>
+    <div class="tab-item" onclick="switchTab('/qc-mobile/issue-list.html')">
+      <span class="tab-icon">📝</span>
+      <span>列表</span>
+    </div>
+    <div class="tab-item active" onclick="switchTab('/qc-mobile/stats.html')">
+      <span class="tab-icon">📊</span>
+      <span>统计</span>
+    </div>
+    <div class="tab-item" onclick="switchTab('/qc-mobile/performance.html')">
+      <span class="tab-icon">👤</span>
+      <span>我的</span>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const COLORS = ['#667eea', '#764ba2', '#11998e', '#ff9f43', '#ff4757', '#54a0ff', '#5f27cd', '#00d2d3', '#ff6b6b', '#feca57'];
+
+    window.addEventListener('DOMContentLoaded', function() {
+      checkLogin();
+      initDateButtons();
+      loadStats(90);
+    });
+
+    function checkLogin() {
+      if (!localStorage.getItem('token')) {
+        window.location.href = '/qc-mobile/login.html';
+      }
+    }
+
+    function goBack() {
+      window.history.back();
+    }
+
+    function switchTab(url) {
+      window.location.href = url;
+    }
+
+    function initDateButtons() {
+      document.querySelectorAll('.date-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          loadStats(parseInt(this.dataset.days));
+        });
+      });
+    }
+
+    async function loadStats(days = 90) {
+      const token = localStorage.getItem('token');
+      const headers = { 'Authorization': `Bearer ${token}` };
+      
+      try {
+        // 加载摘要数据
+        const summaryRes = await fetch(`${API_BASE}/api/stats/summary?days=${days}`, { headers });
+        if (summaryRes.ok) {
+          const summary = await summaryRes.json();
+          document.getElementById('totalIssues').textContent = summary.total_issues?.toLocaleString() || '0';
+          document.getElementById('totalCompensation').textContent = (summary.total_compensation / 10000).toFixed(1) + '万';
+          document.getElementById('factoryCount').textContent = summary.factory_count || '0';
+          document.getElementById('solveRate').textContent = (summary.solve_rate || 0).toFixed(0) + '%';
+        }
+
+        // 加载工厂排名
+        const factoryRes = await fetch(`${API_BASE}/api/stats/by-factory?top=5&days=${days}`, { headers });
+        if (factoryRes.ok) {
+          const factories = await factoryRes.json();
+          renderFactoryRank(factories);
+        }
+
+        // 加载问题类型
+        const typeRes = await fetch(`${API_BASE}/api/stats/by-type?days=${days}`, { headers });
+        if (typeRes.ok) {
+          const types = await typeRes.json();
+          renderTypeChart(types);
+        }
+
+        // 加载平台分布
+        const platformRes = await fetch(`${API_BASE}/api/stats/by-platform?days=${days}`, { headers });
+        if (platformRes.ok) {
+          const platforms = await platformRes.json();
+          renderPlatformChart(platforms);
+        }
+
+        // 加载月度趋势
+        const trendRes = await fetch(`${API_BASE}/api/stats/monthly-trend?months=${Math.ceil(days/30)}`, { headers });
+        if (trendRes.ok) {
+          const trend = await trendRes.json();
+          renderTrendChart(trend);
+        }
+
+      } catch (error) {
+        console.error('加载统计失败:', error);
+        document.querySelectorAll('.loading').forEach(el => {
+          el.textContent = '加载失败';
+        });
+      }
+    }
+
+    function renderFactoryRank(factories) {
+      const container = document.getElementById('factoryRank');
+      container.innerHTML = factories.map((f, i) => {
+        const medalClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
+        const rankNum = i + 1;
+        return `
+          <div class="rank-item">
+            <div class="rank-num ${medalClass}">${rankNum}</div>
+            <div class="rank-name">${f.factory}</div>
+            <div class="rank-value">${f.count}起</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTypeChart(types) {
+      const container = document.getElementById('typeChart');
+      const top5 = types.slice(0, 5);
+      
+      // 生成渐变色
+      let gradientStops = [];
+      let currentPercent = 0;
+      top5.forEach((t, i) => {
+        const nextPercent = currentPercent + t.percentage;
+        gradientStops.push(`${COLORS[i % COLORS.length]} ${currentPercent}% ${nextPercent}%`);
+        currentPercent = nextPercent;
+      });
+      
+      const gradient = `conic-gradient(${gradientStops.join(', ')})`;
+      
+      container.innerHTML = `
+        <div style="width:150px;height:150px;border-radius:50%;background:${gradient};"></div>
+        <div class="pie-legend">
+          ${top5.map((t, i) => `
+            <div class="legend-item">
+              <div class="legend-color" style="background:${COLORS[i % COLORS.length]}"></div>
+              ${t.type} (${t.percentage.toFixed(1)}%)
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderPlatformChart(platforms) {
+      const container = document.getElementById('platformChart');
+      const maxCount = Math.max(...platforms.map(p => p.count));
+      
+      container.innerHTML = platforms.map(p => `
+        <div class="bar-item">
+          <div class="bar-label">${p.platform}</div>
+          <div class="bar-container">
+            <div class="bar-fill" style="width: ${(p.count / maxCount * 100).toFixed(0)}%;">${p.count}</div>
+          </div>
+          <div class="bar-value">${p.percentage.toFixed(0)}%</div>
+        </div>
+      `).join('');
+    }
+
+    function renderTrendChart(trend) {
+      const container = document.getElementById('trendChart');
+      if (!trend || trend.length === 0) {
+        container.innerHTML = '<div class="loading">暂无数据</div>';
+        return;
+      }
+      
+      const maxCount = Math.max(...trend.map(t => t.count));
+      
+      container.innerHTML = trend.map(t => `
+        <div class="bar-item">
+          <div class="bar-label">${t.year}-${String(t.month).padStart(2, '0')}</div>
+          <div class="bar-container">
+            <div class="bar-fill" style="width: ${(t.count / maxCount * 100).toFixed(0)}%;">${t.count}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

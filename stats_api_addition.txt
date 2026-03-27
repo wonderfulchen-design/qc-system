@@ -1,0 +1,112 @@
+@app.get("/api/stats/summary")
+async def get_stats_summary(
+    current_user: QCUser = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取全量统计数据（用于首页和统计页）"""
+    
+    # 1. 总记录数
+    total = db.query(QualityIssue).count()
+    
+    # 2. 按工厂统计（全量）
+    factory_stats = db.query(
+        QualityIssue.factory_name,
+        func.count(QualityIssue.id).label('count')
+    ).group_by(QualityIssue.factory_name).order_by(func.count(QualityIssue.id).desc()).all()
+    
+    # 3. 按问题类型统计（全量）
+    type_stats = db.query(
+        QualityIssue.issue_type,
+        func.count(QualityIssue.id).label('count')
+    ).group_by(QualityIssue.issue_type).order_by(func.count(QualityIssue.id).desc()).all()
+    
+    # 4. 按解决方式统计（全量）
+    solution_stats = db.query(
+        QualityIssue.solution_type,
+        func.count(QualityIssue.id).label('count')
+    ).group_by(QualityIssue.solution_type).order_by(func.count(QualityIssue.id).desc()).all()
+    
+    # 5. 最近 7 天趋势（全量）
+    from datetime import datetime, timedelta
+    seven_days_ago = datetime.now() - timedelta(days=7)
+    trend_stats = db.query(
+        func.date(QualityIssue.created_at).label('date'),
+        func.count(QualityIssue.id).label('count')
+    ).filter(
+        QualityIssue.created_at >= seven_days_ago
+    ).group_by(
+        func.date(QualityIssue.created_at)
+    ).order_by(
+        func.date(QualityIssue.created_at).desc()
+    ).all()
+    
+    return {
+        "total": total,
+        "by_factory": [
+            {"factory": f.factory_name, "count": f.count}
+            for f in factory_stats
+        ],
+        "by_type": [
+            {"type": t.issue_type, "count": t.count}
+            for t in type_stats
+        ],
+        "by_solution": [
+            {"solution": s.solution_type, "count": s.count}
+            for s in solution_stats
+        ],
+        "trend_7days": [
+            {"date": str(t.date), "count": t.count}
+            for t in trend_stats
+        ]
+    }
+
+
+@app.get("/api/stats/by-factory")
+async def get_stats_by_factory(
+    current_user: QCUser = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """按工厂统计（全量）"""
+    stats = db.query(
+        QualityIssue.factory_name,
+        func.count(QualityIssue.id).label('count')
+    ).group_by(QualityIssue.factory_name).order_by(func.count(QualityIssue.id).desc()).all()
+    
+    return [
+        {"factory": s.factory_name, "count": s.count}
+        for s in stats
+    ]
+
+
+@app.get("/api/stats/by-type")
+async def get_stats_by_type(
+    current_user: QCUser = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """按问题类型统计（全量）"""
+    stats = db.query(
+        QualityIssue.issue_type,
+        func.count(QualityIssue.id).label('count')
+    ).group_by(QualityIssue.issue_type).order_by(func.count(QualityIssue.id).desc()).all()
+    
+    return [
+        {"type": s.issue_type, "count": s.count}
+        for s in stats
+    ]
+
+
+@app.get("/api/stats/by-solution")
+async def get_stats_by_solution(
+    current_user: QCUser = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """按解决方式统计（全量）"""
+    stats = db.query(
+        QualityIssue.solution_type,
+        func.count(QualityIssue.id).label('count')
+    ).group_by(QualityIssue.solution_type).order_by(func.count(QualityIssue.id).desc()).all()
+    
+    return [
+        {"solution": s.solution_type, "count": s.count}
+        for s in stats
+    ]

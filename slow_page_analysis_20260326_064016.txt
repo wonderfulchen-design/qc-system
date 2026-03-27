@@ -1,0 +1,28 @@
+QC System - 慢页原因分析报告
+时间：2026-03-26 06:40:16
+总数据量：10299
+总页数：515
+
+最慢的 10 页:
+Page 470: 36.98 ms
+Page 338: 36.45 ms
+Page 497: 36.45 ms
+Page 311: 36.03 ms
+Page 229: 35.83 ms
+Page 373: 35.72 ms
+Page 437: 35.72 ms
+Page 33: 35.45 ms
+Page 364: 35.33 ms
+Page 396: 35.24 ms
+
+详细分析:
+Page 470: elapsed=36.98ms, id_range=-19, images=0
+Page 338: elapsed=36.45ms, id_range=-19, images=0
+Page 497: elapsed=36.45ms, id_range=-19, images=0
+Page 311: elapsed=36.03ms, id_range=-19, images=0
+Page 229: elapsed=35.83ms, id_range=-19, images=0
+Page 373: elapsed=35.72ms, id_range=-19, images=0
+Page 437: elapsed=35.72ms, id_range=-19, images=0
+Page 33: elapsed=35.45ms, id_range=-19, images=0
+Page 364: elapsed=35.33ms, id_range=-19, images=0
+Page 396: elapsed=35.24ms, id_range=-19, images=0

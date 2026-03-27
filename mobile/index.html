@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>QC 质量管理系统 - 首页</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f6f8;
+      min-height: 100vh;
+      padding-bottom: 70px;
+    }
+
+    /* 顶部导航 */
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      padding: 15px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .header-icons {
+      display: flex;
+      gap: 15px;
+    }
+
+    .header-icons .icon {
+      font-size: 22px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ff4757;
+      color: #fff;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .user-name {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    /* 日期栏 */
+    .date-bar {
+      background: rgba(255,255,255,0.15);
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 13px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    /* 内容区域 */
+    .content {
+      padding: 15px;
+    }
+
+    /* 数据概览卡片 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 15px 10px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .stat-card.warning .stat-value {
+      color: #ff9f43;
+    }
+
+    .stat-card.danger .stat-value {
+      color: #ff4757;
+    }
+
+    /* 快捷入口 */
+    .quick-actions {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+    }
+
+    .action-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .action-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .action-icon.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .action-icon.success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+    .action-icon.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .action-icon.info { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+
+    .action-label {
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* 质量预警 */
+    .alerts-section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .alert-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
+      background: #fff5f5;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border-left: 4px solid #ff4757;
+    }
+
+    .alert-item.warning {
+      background: #fffbeb;
+      border-left-color: #ff9f43;
+    }
+
+    .alert-icon {
+      font-size: 20px;
+    }
+
+    .alert-content {
+      flex: 1;
+    }
+
+    .alert-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .alert-desc {
+      font-size: 12px;
+      color: #999;
+    }
+
+    /* 待办事项 */
+    .todos-section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .todo-item:last-child {
+      border-bottom: none;
+    }
+
+    .todo-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #ddd;
+      border-radius: 50%;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .todo-checkbox.checked {
+      background: #667eea;
+      border-color: #667eea;
+    }
+
+    .todo-content {
+      flex: 1;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .todo-content.done {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    /* 底部导航 */
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0;
+      border-top: 1px solid #f0f0f0;
+      z-index: 100;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      color: #999;
+      font-size: 11px;
+    }
+
+    .tab-item.active {
+      color: #667eea;
+    }
+
+    .tab-icon {
+      font-size: 22px;
+    }
+
+    /* 浮动按钮 */
+    .fab {
+      position: fixed;
+      right: 20px;
+      bottom: 90px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+      cursor: pointer;
+      z-index: 99;
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶部导航 -->
+  <div class="header">
+    <div class="header-top">
+      <h1>QC 质量管理系统</h1>
+      <div class="header-icons">
+        <span class="icon" onclick="showNotifications()">
+          🔔
+          <span class="badge" id="notifyBadge">3</span>
+        </span>
+        <span class="icon" onclick="showSettings()">⚙️</span>
+      </div>
+    </div>
+    <div class="user-info">
+      <div class="avatar">👤</div>
+      <div>
+        <div class="user-name" id="userName">张三</div>
+        <div style="font-size: 11px; opacity: 0.7;">质检部 · QC 专员</div>
+      </div>
+    </div>
+    <div class="date-bar" id="currentDate">
+      2025 年 3 月 25 日 星期二
+    </div>
+  </div>
+
+  <!-- 内容区域 -->
+  <div class="content">
+    <!-- 数据概览 -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="todayIssues">12</div>
+        <div class="stat-label">今日问题</div>
+      </div>
+      <div class="stat-card warning">
+        <div class="stat-value" id="pendingItems">5</div>
+        <div class="stat-label">待处理</div>
+      </div>
+      <div class="stat-card danger">
+        <div class="stat-value" id="urgentAlerts">2</div>
+        <div class="stat-label">紧急预警</div>
+      </div>
+    </div>
+
+    <!-- 快捷入口 -->
+    <div class="quick-actions">
+      <div class="section-title">快捷入口</div>
+      <div class="action-grid">
+        <div class="action-item" onclick="goToPage('/qc-mobile/issue-entry.html')">
+          <div class="action-icon primary">📝</div>
+          <div class="action-label">问题录入</div>
+        </div>
+        <div class="action-item" onclick="scanQR()">
+          <div class="action-icon success">📷</div>
+          <div class="action-label">扫码</div>
+        </div>
+        <div class="action-item" onclick="goToPage('/qc-mobile/issue-list.html')">
+          <div class="action-icon warning">📋</div>
+          <div class="action-label">数据浏览</div>
+        </div>
+        <div class="action-item" onclick="goToPage('/qc-mobile/stats.html')">
+          <div class="action-icon info">📊</div>
+          <div class="action-label">统计分析</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 质量预警 -->
+    <div class="alerts-section">
+      <div class="section-title">⚠️ 质量预警</div>
+      <div class="alert-item">
+        <div class="alert-icon">🔴</div>
+        <div class="alert-content">
+          <div class="alert-title">元合工厂 - 做工开线问题</div>
+          <div class="alert-desc">近 7 天发生 15 起，建议加强检验</div>
+        </div>
+      </div>
+      <div class="alert-item warning">
+        <div class="alert-icon">🟡</div>
+        <div class="alert-content">
+          <div class="alert-title">三米工厂 - 污渍问题</div>
+          <div class="alert-desc">近 7 天发生 8 起，请注意</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 待办事项 -->
+    <div class="todos-section">
+      <div class="section-title">📋 待办事项</div>
+      <div class="todo-item">
+        <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+        <div class="todo-content">完成 FY28595 批次检验</div>
+      </div>
+      <div class="todo-item">
+        <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+        <div class="todo-content">提交上周考核报表</div>
+      </div>
+      <div class="todo-item">
+        <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+        <div class="todo-content">处理问题 #Q20250324001</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 浮动按钮 -->
+  <div class="fab" onclick="goToPage('/qc-mobile/issue-entry.html')">+</div>
+
+  <!-- 底部导航 -->
+  <div class="tab-bar">
+    <div class="tab-item active" onclick="switchTab(this, '/qc-mobile/index.html')">
+      <span class="tab-icon">🏠</span>
+      <span>首页</span>
+    </div>
+    <div class="tab-item" onclick="switchTab(this, '/qc-mobile/issue-list.html')">
+      <span class="tab-icon">📝</span>
+      <span>录入</span>
+    </div>
+    <div class="tab-item" onclick="switchTab(this, '/qc-mobile/stats.html')">
+      <span class="tab-icon">📊</span>
+      <span>统计</span>
+    </div>
+    <div class="tab-item" onclick="switchTab(this, '/qc-mobile/performance.html')">
+      <span class="tab-icon">👤</span>
+      <span>我的</span>
+    </div>
+  </div>
+
+  <script>
+    // API 基础 URL
+    const API_BASE = window.location.origin;
+
+    // 页面加载时检查登录状态
+    window.addEventListener('DOMContentLoaded', function() {
+      checkLogin();
+      loadDashboardData();
+      updateDate();
+    });
+
+    // 检查登录状态
+    function checkLogin() {
+      const token = localStorage.getItem('token');
+      const userInfo = localStorage.getItem('userInfo');
+      
+      if (!token) {
+        window.location.href = '/qc-mobile/login.html';
+        return;
+      }
+
+      // 显示用户信息
+      if (userInfo) {
+        const user = JSON.parse(userInfo);
+        document.getElementById('userName').textContent = user.username;
+      }
+    }
+
+    // 加载首页数据
+    async function loadDashboardData() {
+      try {
+        const token = localStorage.getItem('token');
+        
+        // 获取统计概览
+        const statsResponse = await fetch(`${API_BASE}/api/stats/summary`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (statsResponse.ok) {
+          const stats = await statsResponse.json();
+          document.getElementById('todayIssues').textContent = stats.total_issues || 0;
+          document.getElementById('pendingItems').textContent = stats.total_issues || 0;
+        }
+      } catch (error) {
+        console.error('加载数据失败:', error);
+      }
+    }
+
+    // 更新日期
+    function updateDate() {
+      const now = new Date();
+      const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+      document.getElementById('currentDate').textContent = now.toLocaleDateString('zh-CN', options);
+    }
+
+    // 切换待办事项
+    function toggleTodo(element) {
+      element.classList.toggle('checked');
+      const content = element.nextElementSibling;
+      content.classList.toggle('done');
+    }
+
+    // 切换 Tab
+    function switchTab(element, url) {
+      document.querySelectorAll('.tab-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      element.classList.add('active');
+      goToPage(url);
+    }
+
+    // 页面跳转
+    function goToPage(url) {
+      window.location.href = url;
+    }
+
+    // 扫码功能
+    function scanQR() {
+      if (typeof uni !== 'undefined') {
+        // 在企业微信环境中
+        uni.scanCode({
+          success: function (res) {
+            console.log('扫码结果:', res.result);
+            // 跳转到问题录入页并填充货品编码
+            window.location.href = `/qc-mobile/issue-entry.html?goodsNo=${encodeURIComponent(res.result)}`;
+          }
+        });
+      } else {
+        // 浏览器环境，提示使用企业微信
+        alert('请在企业微信中使用扫码功能');
+      }
+    }
+
+    // 显示通知
+    function showNotifications() {
+      alert('暂无新通知');
+    }
+
+    // 显示设置
+    function showSettings() {
+      const menu = confirm('确定要退出登录吗？');
+      if (menu) {
+        logout();
+      }
+    }
+
+    // 退出登录
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userInfo');
+      window.location.href = '/qc-mobile/login.html';
+    }
+  </script>
+</body>
+</html>

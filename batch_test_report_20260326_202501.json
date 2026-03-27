@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-03-26T20:25:01.748631",
+  "total": 3,
+  "success": 3,
+  "fail": 0,
+  "success_rate": 100.0,
+  "success_details": [
+    {
+      "index": 1,
+      "batch_no": "F21143",
+      "factory": "乙超",
+      "goods_no": "23181813010",
+      "issue_type": "起球勾线掉毛",
+      "issue_no": "Q20260326202500C69D4101",
+      "elapsed": 0.018280029296875
+    },
+    {
+      "index": 2,
+      "batch_no": "F21141",
+      "factory": "乙超",
+      "goods_no": "23181802118",
+      "issue_type": "扣子",
+      "issue_no": "Q20260326202500AD29CE01",
+      "elapsed": 0.046570777893066406
+    },
+    {
+      "index": 3,
+      "batch_no": "F21143",
+      "factory": "三米",
+      "goods_no": "23181802104",
+      "issue_type": "起球勾线掉毛",
+      "issue_no": "Q2026032620250180C25A01",
+      "elapsed": 0.02739405632019043
+    }
+  ],
+  "errors": []
+}

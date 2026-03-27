@@ -1,0 +1,49 @@
+    // 1. 扫码功能 - 简单拍照识别
+    function scanCode() {
+      console.log('扫码按钮被点击');
+      
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.capture = 'environment'; // 使用后置摄像头
+      
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          console.log('选择了文件:', file.name);
+          showLoading();
+          
+          try {
+            // 尝试使用 Barcode Detection API
+            if ('BarcodeDetector' in window) {
+              const bitmap = await createImageBitmap(file);
+              const barcodeDetector = new BarcodeDetector({ 
+                formats: ['code_128', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code'] 
+              });
+              const barcodes = await barcodeDetector.detect(bitmap);
+              
+              if (barcodes.length > 0) {
+                document.getElementById('skuNo').value = barcodes[0].rawValue;
+                hideLoading();
+                showToast('扫码成功');
+              } else {
+                hideLoading();
+                showToast('未识别到条码，请手动输入', 3000);
+                document.getElementById('skuNo').focus();
+              }
+            } else {
+              hideLoading();
+              showToast('浏览器不支持条码识别', 3000);
+              document.getElementById('skuNo').focus();
+            }
+          } catch (error) {
+            console.error('条码识别失败:', error);
+            hideLoading();
+            showToast('识别失败，请手动输入', 3000);
+            document.getElementById('skuNo').focus();
+          }
+        }
+      };
+      
+      input.click();
+    }

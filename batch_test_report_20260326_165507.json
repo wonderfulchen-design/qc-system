@@ -1,0 +1,100 @@
+{
+  "timestamp": "2026-03-26T16:55:07.743553",
+  "total": 10,
+  "success": 10,
+  "fail": 0,
+  "success_rate": 100.0,
+  "success_details": [
+    {
+      "index": 1,
+      "batch_no": "F21139",
+      "factory": "丰庆",
+      "goods_no": "24181802186",
+      "issue_type": "掉色",
+      "issue_no": "Q202603261655025F049F01",
+      "elapsed": 0.024892330169677734
+    },
+    {
+      "index": 2,
+      "batch_no": "F21143",
+      "factory": "浩迅",
+      "goods_no": "24181802186",
+      "issue_type": "掉色",
+      "issue_no": "Q20260326165502D3593001",
+      "elapsed": 0.0228879451751709
+    },
+    {
+      "index": 3,
+      "batch_no": "F21140",
+      "factory": "春秋",
+      "goods_no": "23181802122",
+      "issue_type": "拉链",
+      "issue_no": "Q20260326165503D9933801",
+      "elapsed": 0.03078174591064453
+    },
+    {
+      "index": 4,
+      "batch_no": "F21140",
+      "factory": "丰庆",
+      "goods_no": "23181813015",
+      "issue_type": "做工开线等",
+      "issue_no": "Q20260326165503DBD3FB01",
+      "elapsed": 0.03330850601196289
+    },
+    {
+      "index": 5,
+      "batch_no": "F21140",
+      "factory": "乙超",
+      "goods_no": "23181802105",
+      "issue_type": "掉色",
+      "issue_no": "Q20260326165504438F3901",
+      "elapsed": 0.0411229133605957
+    },
+    {
+      "index": 6,
+      "batch_no": "F21139",
+      "factory": "元合",
+      "goods_no": "23181802104",
+      "issue_type": "扣子",
+      "issue_no": "Q20260326165505EE76BF01",
+      "elapsed": 0.0416412353515625
+    },
+    {
+      "index": 7,
+      "batch_no": "F21143",
+      "factory": "丰庆",
+      "goods_no": "23181802121",
+      "issue_type": "破洞",
+      "issue_no": "Q202603261655051155B201",
+      "elapsed": 0.02849745750427246
+    },
+    {
+      "index": 8,
+      "batch_no": "F21143",
+      "factory": "爱探索",
+      "goods_no": "23181802121",
+      "issue_type": "起球勾线掉毛",
+      "issue_no": "Q20260326165506FD2A0801",
+      "elapsed": 0.03350400924682617
+    },
+    {
+      "index": 9,
+      "batch_no": "F21140",
+      "factory": "浩迅",
+      "goods_no": "23181802105",
+      "issue_type": "扣子",
+      "issue_no": "Q20260326165506DEE5E601",
+      "elapsed": 0.05554699897766113
+    },
+    {
+      "index": 10,
+      "batch_no": "F21139",
+      "factory": "元合",
+      "goods_no": "24181802186",
+      "issue_type": "扣子",
+      "issue_no": "Q202603261655071EF6BD01",
+      "elapsed": 0.03538918495178223
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,43 @@
+    // 1. 扫码功能 - 简单拍照识别
+    function scanCode() {
+      console.log('扫码按钮被点击');
+      
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.capture = 'environment';
+      
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          showLoading();
+          
+          try {
+            if ('BarcodeDetector' in window) {
+              const bitmap = await createImageBitmap(file);
+              const barcodeDetector = new BarcodeDetector({ 
+                formats: ['code_128', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code'] 
+              });
+              const barcodes = await barcodeDetector.detect(bitmap);
+              
+              if (barcodes.length > 0) {
+                document.getElementById('skuNo').value = barcodes[0].rawValue;
+                hideLoading();
+                showToast('✅ 扫码成功');
+              } else {
+                hideLoading();
+                showToast('未识别到条码', 2000);
+              }
+            } else {
+              hideLoading();
+              showToast('不支持条码识别', 2000);
+            }
+          } catch (error) {
+            hideLoading();
+            showToast('识别失败', 2000);
+          }
+        }
+      };
+      
+      input.click();
+    }

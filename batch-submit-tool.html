@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>批量提交测试工具</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f6f8;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #667eea;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e1e1e1;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #667eea;
+      outline: none;
+    }
+    .btn {
+      padding: 14px 28px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+    }
+    .btn-success {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: #fff;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .progress {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f5f6f8;
+      border-radius: 8px;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 30px;
+      background: #e1e1e1;
+      border-radius: 15px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 14px;
+    }
+    .log {
+      margin-top: 20px;
+      padding: 15px;
+      background: #1e1e1e;
+      color: #38ef7d;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .log-item {
+      margin-bottom: 5px;
+    }
+    .log-success { color: #38ef7d; }
+    .log-error { color: #ff4757; }
+    .log-info { color: #667eea; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .stat-card {
+      padding: 15px;
+      background: #f5f6f8;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #667eea;
+    }
+    .stat-label {
+      font-size: 13px;
+      color: #999;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📝 批量问题录入测试工具</h1>
+    
+    <div class="form-group">
+      <label>登录账号</label>
+      <input type="text" id="username" value="admin" placeholder="用户名">
+    </div>
+    
+    <div class="form-group">
+      <label>登录密码</label>
+      <input type="password" id="password" value="admin123" placeholder="密码">
+    </div>
+    
+    <div class="form-group">
+      <label>提交数量</label>
+      <input type="number" id="count" value="10" min="1" max="100">
+    </div>
+    
+    <div class="form-group">
+      <label>波次号</label>
+      <input type="text" id="batchNo" value="F21139" placeholder="波次号">
+    </div>
+    
+    <div class="form-group">
+      <label>工厂</label>
+      <select id="factory">
+        <option value="三米">三米</option>
+        <option value="春秋">春秋</option>
+        <option value="丰庆">丰庆</option>
+        <option value="乙超">乙超</option>
+        <option value="元合">元合</option>
+        <option value="爱探索">爱探索</option>
+        <option value="浩迅">浩迅</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label>问题类型</label>
+      <select id="issueType">
+        <option value="污渍">污渍</option>
+        <option value="扣子">扣子</option>
+        <option value="拉链">拉链</option>
+        <option value="掉色">掉色</option>
+        <option value="做工开线等">做工开线等</option>
+        <option value="破洞">破洞</option>
+        <option value="起球勾线掉毛">起球勾线掉毛</option>
+        <option value="色差">色差</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label>解决方式</label>
+      <select id="solutionType">
+        <option value="返工">返工</option>
+        <option value="拒收">拒收</option>
+        <option value="全检">全检</option>
+        <option value="代卖">代卖</option>
+        <option value="报废">报废</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <button class="btn btn-primary" onclick="startBatchSubmit()">🚀 开始批量提交</button>
+      <button class="btn btn-success" onclick="clearLog()">🗑️ 清空日志</button>
+    </div>
+    
+    <div class="progress" style="display:none;" id="progressSection">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%;">0%</div>
+      </div>
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-value" id="successCount">0</div>
+          <div class="stat-label">成功</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="failCount">0</div>
+          <div class="stat-label">失败</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="totalCount">0</div>
+          <div class="stat-label">总计</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:8000';
+    let token = '';
+    let successCount = 0;
+    let failCount = 0;
+    let totalCount = 0;
+
+    function log(message, type = 'info') {
+      const logDiv = document.getElementById('log');
+      const logItem = document.createElement('div');
+      logItem.className = `log-item log-${type}`;
+      const time = new Date().toLocaleTimeString();
+      logItem.textContent = `[${time}] ${message}`;
+      logDiv.appendChild(logItem);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+      successCount = 0;
+      failCount = 0;
+      totalCount = 0;
+      updateStats();
+    }
+
+    function updateStats() {
+      document.getElementById('successCount').textContent = successCount;
+      document.getElementById('failCount').textContent = failCount;
+      document.getElementById('totalCount').textContent = totalCount;
+      
+      const progress = totalCount > 0 ? (successCount + failCount) / totalCount * 100 : 0;
+      document.getElementById('progressFill').style.width = progress + '%';
+      document.getElementById('progressFill').textContent = Math.round(progress) + '%';
+    }
+
+    async function login() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      
+      try {
+        const response = await fetch(`${API_BASE}/token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          token = data.access_token;
+          log('登录成功', 'success');
+          return true;
+        } else {
+          log('登录失败：' + response.statusText, 'error');
+          return false;
+        }
+      } catch (error) {
+        log('登录错误：' + error.message, 'error');
+        return false;
+      }
+    }
+
+    async function submitIssue(index, total) {
+      const batchNo = document.getElementById('batchNo').value;
+      const factory = document.getElementById('factory').value;
+      const issueType = document.getElementById('issueType').value;
+      const solutionType = document.getElementById('solutionType').value;
+      
+      const goodsNoList = [
+        '23181802105', '23181802104', '24181802186', '23181802121',
+        '23181813008', '23181813015', '23181813011', '23181813010',
+        '23181802122', '23181802118'
+      ];
+      
+      const goodsNo = goodsNoList[index % goodsNoList.length];
+      
+      const formData = {
+        goods_no: goodsNo,
+        factory_name: factory,
+        batch_no: batchNo,
+        issue_type: issueType,
+        issue_desc: `批量测试问题 #${index + 1} - 自动生成的测试数据，用于验证提交功能是否正常`,
+        solution_type: solutionType,
+        compensation_amount: 0,
+        product_image: null,
+        issue_images: []
+      };
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/issues`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          log(`提交成功 #${index + 1}/${total} - 问题编号：${result.issue_no}`, 'success');
+          successCount++;
+        } else {
+          const error = await response.json();
+          log(`提交失败 #${index + 1}/${total} - ${error.detail || response.statusText}`, 'error');
+          failCount++;
+        }
+      } catch (error) {
+        log(`提交错误 #${index + 1}/${total} - ${error.message}`, 'error');
+        failCount++;
+      }
+      
+      totalCount++;
+      updateStats();
+      
+      // 等待 500ms 避免请求过快
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    async function startBatchSubmit() {
+      const count = parseInt(document.getElementById('count').value);
+      
+      // 禁用按钮
+      document.querySelector('.btn-primary').disabled = true;
+      document.getElementById('progressSection').style.display = 'block';
+      
+      log(`开始批量提交 ${count} 条问题...`, 'info');
+      
+      // 登录
+      const loginSuccess = await login();
+      if (!loginSuccess) {
+        document.querySelector('.btn-primary').disabled = false;
+        return;
+      }
+      
+      // 批量提交
+      for (let i = 0; i < count; i++) {
+        await submitIssue(i, count);
+      }
+      
+      log(`批量提交完成！成功：${successCount}, 失败：${failCount}`, 'success');
+      
+      // 启用按钮
+      document.querySelector('.btn-primary').disabled = false;
+    }
+  </script>
+</body>
+</html>

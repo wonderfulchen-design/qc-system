@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>问题列表 - QC 质量管理系统</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f6f8; min-height: 100vh; padding-bottom: 70px; }
+    
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 15px 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 100; }
+    .back-btn { font-size: 24px; cursor: pointer; }
+    .header h1 { font-size: 18px; font-weight: 600; flex: 1; }
+    .header-actions { display: flex; gap: 15px; font-size: 20px; }
+    
+    .filter-bar { background: #fff; padding: 15px; display: flex; gap: 10px; overflow-x: auto; }
+    .filter-btn { padding: 8px 16px; background: #f5f6f8; border-radius: 20px; font-size: 13px; white-space: nowrap; border: none; cursor: pointer; }
+    .filter-btn.active { background: #667eea; color: #fff; }
+    
+    .search-bar { background: #fff; padding: 15px; display: flex; gap: 10px; }
+    .search-input { flex: 1; padding: 10px 15px; border: 2px solid #e1e1e1; border-radius: 20px; font-size: 14px; outline: none; }
+    .search-btn { padding: 10px 20px; background: #667eea; color: #fff; border: none; border-radius: 20px; cursor: pointer; }
+    
+    .result-info { padding: 10px 15px; font-size: 13px; color: #999; background: #fff; border-top: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0; }
+    
+    .issue-list { padding: 0 15px 15px; }
+    .issue-card { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .issue-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .issue-no { font-size: 12px; color: #999; }
+    .issue-status { padding: 4px 10px; border-radius: 12px; font-size: 11px; }
+    .issue-status.pending { background: #fff3cd; color: #856404; }
+    .issue-status.resolved { background: #d4edda; color: #155724; }
+    .issue-status.closed { background: #e2e3e5; color: #383d41; }
+    
+    .issue-main { display: flex; gap: 12px; }
+    .issue-images { display: flex; gap: 5px; }
+    .issue-images img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+    
+    .issue-info { flex: 1; }
+    .issue-type { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 5px; }
+    .issue-desc { font-size: 13px; color: #666; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    
+    .issue-meta { display: flex; justify-content: space-between; font-size: 12px; color: #999; }
+    .issue-factory { display: flex; align-items: center; gap: 5px; }
+    .issue-date { }
+    
+    .issue-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+    .issue-solution { font-size: 13px; color: #667eea; }
+    .issue-compensation { font-size: 14px; font-weight: 600; color: #ff4757; }
+    
+    .pagination { display: flex; justify-content: center; gap: 8px; padding: 20px 15px; }
+    .page-btn { padding: 8px 16px; background: #fff; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    .page-btn.active { background: #667eea; color: #fff; border-color: #667eea; }
+    .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; display: flex; justify-content: space-around; padding: 8px 0; border-top: 1px solid #f0f0f0; z-index: 100; }
+    .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; color: #999; font-size: 11px; }
+    .tab-item.active { color: #667eea; }
+    .tab-icon { font-size: 22px; }
+    
+    .fab { position: fixed; right: 20px; bottom: 90px; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4); cursor: pointer; z-index: 99; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="back-btn" onclick="goBack()">←</span>
+    <h1>问题数据</h1>
+    <div class="header-actions">
+      <span onclick="showFilter()">🔍</span>
+      <span onclick="exportData()">📤</span>
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" class="search-input" id="searchInput" placeholder="搜索款号/工厂/问题类型...">
+    <button class="search-btn" onclick="searchIssues()">搜索</button>
+    <button class="search-btn" onclick="clearFilter()" style="background:#999;margin-left:5px;">清空</button>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="all" data-value="">全部</button>
+    <button class="filter-btn" data-filter="factory" data-value="">🏭 工厂</button>
+    <button class="filter-btn" data-filter="designer" data-value="">👨‍🎨 设计师</button>
+    <button class="filter-btn" data-filter="merchandiser" data-value="">📋 跟单员</button>
+  </div>
+
+  <div class="result-info" id="resultInfo">共 1,234 条数据</div>
+
+  <div class="issue-list" id="issueList">
+    <!-- 问题卡片由 JS 动态加载 -->
+  </div>
+
+  <div class="pagination">
+    <button class="page-btn" onclick="changePage(-1)" id="prevBtn">上一页</button>
+    <button class="page-btn active" onclick="goToPage(1)">1</button>
+    <button class="page-btn" onclick="goToPage(2)">2</button>
+    <button class="page-btn" onclick="goToPage(3)">3</button>
+    <button class="page-btn" onclick="goToPage(4)">4</button>
+    <button class="page-btn" onclick="goToPage(5)">5</button>
+    <button class="page-btn" onclick="changePage(1)" id="nextBtn">下一页</button>
+  </div>
+
+  <div class="fab" onclick="goToEntry()">+</div>
+
+  <div class="tab-bar">
+    <div class="tab-item" onclick="switchTab('/qc-mobile/index.html')">
+      <span class="tab-icon">🏠</span>
+      <span>首页</span>
+    </div>
+    <div class="tab-item active" onclick="switchTab('/qc-mobile/issue-list.html')">
+      <span class="tab-icon">📝</span>
+      <span>录入</span>
+    </div>
+    <div class="tab-item" onclick="switchTab('/qc-mobile/stats.html')">
+      <span class="tab-icon">📊</span>
+      <span>统计</span>
+    </div>
+    <div class="tab-item" onclick="switchTab('/qc-mobile/performance.html')">
+      <span class="tab-icon">👤</span>
+      <span>我的</span>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let currentPage = 1;
+    let currentFilter = '';
+    let searchKeyword = '';
+    let issues = [];
+
+    window.addEventListener('DOMContentLoaded', function() {
+      checkLogin();
+      loadIssues();
+      initFilterButtons();
+    });
+
+    function checkLogin() {
+      if (!localStorage.getItem('token')) {
+        window.location.href = '/qc-mobile/login.html';
+      }
+    }
+
+    function goBack() {
+      window.history.back();
+    }
+
+    function goToEntry() {
+      window.location.href = '/qc-mobile/issue-entry.html';
+    }
+
+    function switchTab(url) {
+      window.location.href = url;
+    }
+
+    let selectedFilterType = 'all'; // all, factory, designer, merchandiser
+    let selectedFilterValue = '';
+
+    function initFilterButtons() {
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          
+          selectedFilterType = this.dataset.filter;
+          selectedFilterValue = this.dataset.value;
+          
+          currentPage = 1;
+          
+          // 根据筛选类型弹出选择框
+          if (selectedFilterType !== 'all') {
+            showFilterSelection(selectedFilterType);
+          } else {
+            loadIssues();
+          }
+        });
+      });
+    }
+    
+    // 显示筛选选择框
+    async function showFilterSelection(filterType) {
+      const token = localStorage.getItem('token');
+      let options = [];
+      let title = '';
+      
+      try {
+        // 从 product_batches API 获取所有选项
+        const response = await fetch(`${API_BASE}/api/batches/options`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (filterType === 'factory') {
+            title = '选择工厂';
+            options = data.factories || [];
+          } else if (filterType === 'designer') {
+            title = '选择设计师';
+            options = data.designers || [];
+          } else if (filterType === 'merchandiser') {
+            title = '选择跟单员';
+            options = data.merchandisers || [];
+          }
+        }
+        
+        if (options.length === 0) {
+          alert('暂无数据');
+          document.querySelector('.filter-btn[data-filter="all"]').click();
+          return;
+        }
+        
+        // 创建选择对话框
+        const optionsHtml = options.map(opt => 
+          `<option value="${opt}">${opt}</option>`
+        ).join('');
+        
+        const confirmHtml = `
+          <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:1000;min-width:300px;">
+            <h3 style="margin-bottom:15px;font-size:16px;">${title}</h3>
+            <select id="filterSelect" style="width:100%;padding:10px;border:2px solid #e1e1e1;border-radius:8px;font-size:15px;margin-bottom:15px;">
+              <option value="">全部</option>
+              ${optionsHtml}
+            </select>
+            <div style="display:flex;gap:10px;">
+              <button id="cancelFilter" style="flex:1;padding:10px;border:2px solid #e1e1e1;border-radius:8px;background:#fff;font-size:15px;cursor:pointer;">取消</button>
+              <button id="confirmFilter" style="flex:1;padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;font-size:15px;cursor:pointer;">确定</button>
+            </div>
+          </div>
+          <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:999;" id="filterOverlay"></div>
+        `;
+        
+        const tempContainer = document.createElement('div');
+        tempContainer.innerHTML = confirmHtml;
+        document.body.appendChild(tempContainer);
+        
+        document.getElementById('cancelFilter').onclick = function() {
+          document.getElementById('filterOverlay').remove();
+          this.parentElement.parentElement.parentElement.remove();
+          document.querySelector('.filter-btn[data-filter="all"]').click();
+        };
+        
+        document.getElementById('filterOverlay').onclick = function() {
+          this.remove();
+          this.parentElement.remove();
+          document.querySelector('.filter-btn[data-filter="all"]').click();
+        };
+        
+        document.getElementById('confirmFilter').onclick = function() {
+          selectedFilterValue = document.getElementById('filterSelect').value;
+          const filterBtn = document.querySelector(`.filter-btn[data-filter="${filterType}"]`);
+          if (filterBtn) {
+            let label = filterType === 'factory' ? '🏭' : filterType === 'designer' ? '👨‍🎨' : '📋';
+            filterBtn.textContent = selectedFilterValue ? `${label} ${selectedFilterValue}` : (filterType === 'factory' ? '🏭 工厂' : filterType === 'designer' ? '👨‍🎨 设计师' : '📋 跟单员');
+          }
+          document.getElementById('filterOverlay').remove();
+          this.parentElement.parentElement.parentElement.remove();
+          loadIssues();
+        };
+        
+      } catch (error) {
+        console.error('获取筛选选项失败:', error);
+        alert('获取数据失败，请重试');
+        document.querySelector('.filter-btn[data-filter="all"]').click();
+      }
+    }
+    
+    function clearFilter() {
+      selectedFilterType = 'all';
+      selectedFilterValue = '';
+      searchKeyword = '';
+      document.getElementById('searchInput').value = '';
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
+      
+      // 重置筛选按钮文字
+      document.querySelector('.filter-btn[data-filter="factory"]').textContent = '🏭 工厂';
+      document.querySelector('.filter-btn[data-filter="designer"]').textContent = '👨‍🎨 设计师';
+      document.querySelector('.filter-btn[data-filter="merchandiser"]').textContent = '📋 跟单员';
+      
+      currentPage = 1;
+      loadIssues();
+    }
+
+    async function loadIssues() {
+      const token = localStorage.getItem('token');
+      try {
+        // 获取所有数据用于前端筛选和分页
+        const params = new URLSearchParams({
+          page: 1,
+          page_size: 10000  // 获取所有数据
+        });
+
+        const response = await fetch(`${API_BASE}/api/issues?${params}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          let allIssues = data.data || [];
+          
+          // 前端筛选
+          if (selectedFilterType !== 'all' && selectedFilterValue) {
+            if (selectedFilterType === 'factory') {
+              allIssues = allIssues.filter(i => i.factory_name === selectedFilterValue);
+            } else if (selectedFilterType === 'designer') {
+              allIssues = allIssues.filter(i => i.designer === selectedFilterValue);
+            } else if (selectedFilterType === 'merchandiser') {
+              allIssues = allIssues.filter(i => i.merchandiser === selectedFilterValue);
+            }
+          }
+          
+          // 搜索关键词筛选
+          if (searchKeyword) {
+            const keyword = searchKeyword.toLowerCase();
+            allIssues = allIssues.filter(i => 
+              (i.goods_no && i.goods_no.toLowerCase().includes(keyword)) ||
+              (i.factory_name && i.factory_name.toLowerCase().includes(keyword)) ||
+              (i.issue_type && i.issue_type.toLowerCase().includes(keyword))
+            );
+          }
+          
+          // 分页
+          const pageSize = 20;
+          const totalFiltered = allIssues.length;
+          const totalPages = Math.ceil(totalFiltered / pageSize) || 1;
+          const startIndex = (currentPage - 1) * pageSize;
+          issues = allIssues.slice(startIndex, startIndex + pageSize);
+          
+          document.getElementById('resultInfo').textContent = `共 ${totalFiltered.toLocaleString()} 条数据${searchKeyword ? `（搜索："${searchKeyword}"）` : ''}${selectedFilterValue ? `（${selectedFilterType === 'factory' ? '工厂' : selectedFilterType === 'designer' ? '设计师' : '跟单员'}：${selectedFilterValue}）` : ''}`;
+          renderIssues(issues);
+          updatePagination(totalPages);
+        }
+      } catch (error) {
+        console.error('加载失败:', error);
+        // 使用示例数据渲染
+        renderIssues(getMockIssues());
+      }
+    }
+
+    function updatePagination(totalPages) {
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      
+      if (prevBtn) prevBtn.disabled = currentPage <= 1;
+      if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+      
+      // 更新页码显示
+      const pageButtons = document.querySelectorAll('.page-btn:not(#prevBtn):not(#nextBtn)');
+      pageButtons.forEach((btn, index) => {
+        if (btn.textContent === '...') return;
+        
+        const pageNum = index + 1;
+        if (pageNum <= totalPages) {
+          btn.style.display = 'block';
+          if (pageNum === currentPage) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        } else {
+          btn.style.display = 'none';
+        }
+      });
+    }
+
+    function renderIssues(issues) {
+      const container = document.getElementById('issueList');
+      if (issues.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:#999;">暂无数据</div>';
+        return;
+      }
+
+      container.innerHTML = issues.map(issue => {
+        // 安全检查：确保 issue_images 是数组
+        const issueImages = Array.isArray(issue.issue_images) ? issue.issue_images : [];
+        const hasImages = issueImages.length > 0;
+        
+        return `
+        <div class="issue-card" data-issue-no="${issue.issue_no}" onclick="handleCardClick(this)">
+          <div class="issue-header">
+            <span class="issue-no">📦 ${issue.batch_no || '无波次号'}</span>
+            <span class="issue-status ${issue.status || 'pending'}">${getStatusText(issue.status)}</span>
+          </div>
+          <div class="issue-main" style="${hasImages ? '' : 'display: flex; gap: 12px;'}">
+            ${hasImages ? `
+            <div class="issue-images">
+              ${issueImages.slice(0, 2).map(img => img ? `<img src="${img}" onerror="this.style.display='none'">` : '').join('')}
+            </div>
+            ` : ''}
+            <div class="issue-info" style="${hasImages ? '' : 'flex: 1;'}">
+              <div class="issue-type">${issue.issue_type || '未知类型'}</div>
+              <div class="issue-desc">${issue.issue_desc || '暂无描述'}</div>
+              <div class="issue-meta">
+                <span class="issue-factory">🏭 ${issue.factory_name || '未知工厂'}</span>
+                <span class="issue-date">${formatDate(issue.created_at)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="issue-footer">
+            <span class="issue-solution">${issue.solution_type || '待处理'}</span>
+            <span class="issue-compensation">¥${issue.compensation_amount || 0}</span>
+          </div>
+        </div>
+        `;
+      }).join('');
+    }
+
+    function getMockIssues() {
+      return [
+        { id: 1, issue_no: 'Q20250324001', issue_type: '做工开线等', issue_desc: '衣服下摆处开线约 5cm', factory_name: '元合服装厂', solution_type: '退货', compensation_amount: 0, status: 'pending', created_at: '2025-03-24T22:04:00', issue_images: [] },
+        { id: 2, issue_no: 'Q20250324002', issue_type: '掉色', issue_desc: '洗涤后严重掉色', factory_name: '丰庆制衣', solution_type: '补偿', compensation_amount: 20, status: 'resolved', created_at: '2025-03-24T21:57:00', issue_images: [] },
+        { id: 3, issue_no: 'Q20250324003', issue_type: '污渍', issue_desc: '左袖口有明显污渍', factory_name: '乙超服饰', solution_type: '现金补偿', compensation_amount: 6, status: 'pending', created_at: '2025-03-24T21:53:00', issue_images: [] },
+        { id: 4, issue_no: 'Q20250324004', issue_type: '洗唛和吊牌不符', issue_desc: '洗唛成分与吊牌不一致', factory_name: '元合服装厂', solution_type: '退货', compensation_amount: 0, status: 'closed', created_at: '2025-03-24T21:55:00', issue_images: [] },
+        { id: 5, issue_no: 'Q20250324005', issue_type: '扣子', issue_desc: '扣子松动易脱落', factory_name: '三米制衣', solution_type: '补偿', compensation_amount: 5, status: 'pending', created_at: '2025-03-24T20:30:00', issue_images: [] }
+      ];
+    }
+
+    function getStatusText(status) {
+      const map = { 'pending': '待处理', 'resolved': '已解决', 'closed': '已关闭' };
+      return map[status] || '待处理';
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diff = now - date;
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+      
+      if (hours < 1) return '刚刚';
+      if (hours < 24) return `${hours}小时前`;
+      if (days < 7) return `${days}天前`;
+      return date.toLocaleDateString('zh-CN');
+    }
+
+    function searchIssues() {
+      const keyword = document.getElementById('searchInput').value.trim();
+      searchKeyword = keyword;
+      currentPage = 1;
+      loadIssues();
+    }
+    
+    // 支持回车搜索
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        searchIssues();
+      }
+    });
+    
+    function clearSearch() {
+      searchKeyword = '';
+      document.getElementById('searchInput').value = '';
+      currentPage = 1;
+      loadIssues();
+    }
+
+    function showFilter() {
+      // 切换筛选类型
+      const filterType = prompt('请输入筛选类型:\n1. factory - 按工厂\n2. type - 按问题类型\n3. platform - 按平台\n4. batch - 按波次号', 'factory');
+      if (filterType) {
+        currentFilter = filterType;
+        currentPage = 1;
+        loadIssues();
+      }
+    }
+
+    function exportData() {
+      const confirmExport = confirm(`确定要导出当前数据吗？\n共 ${document.getElementById('resultInfo').textContent}\n\n导出为 CSV 格式`);
+      if (confirmExport) {
+        exportToCSV();
+      }
+    }
+    
+    function exportToCSV() {
+      const headers = ['问题编号', '款号', '工厂', '问题类型', '问题描述', '解决方式', '补偿金额', '创建时间'];
+      const rows = issues.map(issue => [
+        issue.issue_no,
+        issue.goods_no,
+        issue.factory_name,
+        issue.issue_type,
+        issue.issue_desc,
+        issue.solution_type,
+        issue.compensation_amount,
+        issue.created_at
+      ]);
+      
+      const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `问题列表_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      
+      alert('导出成功！');
+    }
+
+    function changePage(delta) {
+      currentPage += delta;
+      if (currentPage < 1) currentPage = 1;
+      loadIssues();
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      loadIssues();
+    }
+
+    function viewDetailByNo(issueNo) {
+      // 只使用问题编码（安全），不暴露数字 ID
+      window.location.href = `/qc-mobile/issue-detail.html?no=${encodeURIComponent(issueNo)}`;
+    }
+    
+    function handleCardClick(cardElement) {
+      const issueNo = cardElement.getAttribute('data-issue-no');
+      if (issueNo) {
+        viewDetailByNo(issueNo);
+      }
+    }
+  </script>
+</body>
+</html>

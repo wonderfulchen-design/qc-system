@@ -1,0 +1,7 @@
+class ProductBatch(Base):
+    __tablename__ = "product_batches"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    batch_no = Column(String(32), unique=True, index=True)
+    factory_name = Column(String(64), index=True)
+    goods_no = Column(String(32), index=True)

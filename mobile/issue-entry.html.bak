@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>问题录入 - QC 质量管理系统</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f6f8; min-height: 100vh; padding-bottom: 80px; }
+    
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 15px 20px; display: flex; align-items: center; gap: 15px; }
+    .back-btn { font-size: 24px; cursor: pointer; }
+    .header h1 { font-size: 18px; font-weight: 600; flex: 1; }
+    
+    .form-section { background: #fff; margin: 15px; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .section-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 15px; }
+    
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 14px; color: #555; margin-bottom: 8px; font-weight: 500; }
+    .required { color: #ff4757; font-weight: normal; }
+    .form-input { width: 100%; padding: 12px; border: 2px solid #e1e1e1; border-radius: 8px; font-size: 15px; outline: none; }
+    .form-input:focus { border-color: #667eea; }
+    .form-input[readonly] { background: #f5f6f8; }
+    
+    .image-upload { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+    .upload-item { aspect-ratio: 1; border: 2px dashed #ddd; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; cursor: pointer; background: #fafafa; position: relative; }
+    .upload-item.has-image { border-style: solid; border-color: #667eea; }
+    .upload-item .icon { font-size: 24px; color: #999; }
+    .upload-item .label { font-size: 11px; color: #999; }
+    .upload-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+    .upload-item .remove-btn { position: absolute; top: 3px; right: 3px; background: rgba(255,0,0,0.8); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 14px; display: none; }
+    .upload-item.has-image .remove-btn { display: block; }
+    
+    .issue-types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .type-item { padding: 10px 5px; border: 2px solid #e1e1e1; border-radius: 8px; text-align: center; font-size: 12px; cursor: pointer; }
+    .type-item.selected { border-color: #667eea; background: rgba(102, 126, 234, 0.1); color: #667eea; }
+    
+    .textarea { width: 100%; padding: 12px; border: 2px solid #e1e1e1; border-radius: 8px; font-size: 15px; min-height: 80px; resize: vertical; outline: none; }
+    .textarea:focus { border-color: #667eea; }
+    
+    /* 联想提示框样�?*/
+    .suggestions-box {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 2px solid #667eea;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+      z-index: 1000;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 4px;
+    }
+    
+    .suggestion-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.2s;
+    }
+    
+    .suggestion-item:last-child {
+      border-bottom: none;
+    }
+    
+    .suggestion-item:hover {
+      background: #f5f6f8;
+    }
+    
+    .suggestion-item .batch-code {
+      font-weight: bold;
+      color: #667eea;
+      font-size: 14px;
+    }
+    
+    .suggestion-item .factory-name {
+      color: #666;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    
+    .solution-options { display: flex; flex-wrap: wrap; gap: 10px; }
+    .solution-option { padding: 8px 16px; border: 2px solid #e1e1e1; border-radius: 20px; font-size: 13px; cursor: pointer; }
+    .solution-option.selected { border-color: #667eea; background: #667eea; color: #fff; }
+    
+    .submit-btns { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; padding: 15px 20px; border-top: 1px solid #e1e1e1; display: flex; gap: 15px; }
+    .btn { flex: 1; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .btn-draft { background: #f5f6f8; color: #666; }
+    .btn-submit { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    
+    .loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .loading.show { display: flex; }
+    .loading-spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 1001; opacity: 0; transition: opacity 0.3s; pointer-events: none; max-width: 80%; text-align: center; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="back-btn" onclick="goBack()">�?/span>
+    <h1>问题录入</h1>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="loading-spinner"></div>
+  </div>
+  
+  <div class="toast" id="toast"></div>
+
+  <form id="issueForm">
+    <!-- 商品信息 -->
+    <div class="form-section">
+      <div class="section-title">📦 商品信息</div>
+      
+      <div class="form-group">
+        <label>波次�?<span class="required">（必填）</span></label>
+        <div style="position: relative;">
+          <input type="text" class="form-input" id="batchNo" placeholder="输入波次号，显示联想提示" style="text-transform:uppercase;" inputmode="latin" pattern="[A-Za-z0-9]*" autocapitalize="characters" oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase(); showBatchSuggestions()" onblur="hideBatchSuggestions()" required>
+          <!-- 联想提示�?-->
+          <div id="batchSuggestions" class="suggestions-box" style="display: none;"></div>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>工厂 <span class="required">（必填）</span></label>
+        <select class="form-input" id="factory" required>
+          <option value="">请选择工厂</option>
+          <option value="元合">元合</option>
+          <option value="三米">三米</option>
+          <option value="乙超">乙超</option>
+          <option value="浩迅">浩迅</option>
+          <option value="丰庆">丰庆</option>
+          <option value="春秋">春秋</option>
+          <option value="易茂">易茂</option>
+          <option value="爱探�?>爱探�?/option>
+          <option value="东遇">东遇</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>货品编码 <span class="required">（必填）</span></label>
+        <input type="number" class="form-input" id="goodsNo" placeholder="输入货品编码自动填充" onblur="searchBatchByGoodsNo()" required>
+      </div>
+    </div>
+
+    <!-- 图片上传 -->
+    <div class="form-section">
+      <div class="section-title">📷 拍照上传 <span class="required">（必填）</span></div>
+      <div class="image-upload">
+        <div class="upload-item" id="upload-product" onclick="uploadImage('product')">
+          <div class="icon">📦</div>
+          <div class="label">商品�?/div>
+          <button type="button" class="remove-btn" onclick="removeImage('product', event)">×</button>
+        </div>
+        <div class="upload-item" id="upload-issue1" onclick="uploadImage('issue1')">
+          <div class="icon">🔍</div>
+          <div class="label">问题�?1</div>
+          <button type="button" class="remove-btn" onclick="removeImage('issue1', event)">×</button>
+        </div>
+        <div class="upload-item" id="upload-issue2" onclick="uploadImage('issue2')">
+          <div class="icon">🔍</div>
+          <div class="label">问题�?2</div>
+          <button type="button" class="remove-btn" onclick="removeImage('issue2', event)">×</button>
+        </div>
+        <div class="upload-item" id="upload-issue3" onclick="uploadImage('issue3')">
+          <div class="icon">🔍</div>
+          <div class="label">问题�?3</div>
+          <button type="button" class="remove-btn" onclick="removeImage('issue3', event)">×</button>
+        </div>
+        <div class="upload-item" id="upload-issue4" onclick="uploadImage('issue4')">
+          <div class="icon">🔍</div>
+          <div class="label">问题�?4</div>
+          <button type="button" class="remove-btn" onclick="removeImage('issue4', event)">×</button>
+        </div>
+        <div class="upload-item" id="upload-issue5" onclick="uploadImage('issue5')">
+          <div class="icon">🔍</div>
+          <div class="label">问题�?5</div>
+          <button type="button" class="remove-btn" onclick="removeImage('issue5', event)">×</button>
+        </div>
+        <div class="upload-item" id="upload-issue6" onclick="uploadImage('issue6')">
+          <div class="icon">🔍</div>
+          <div class="label">问题�?6</div>
+          <button type="button" class="remove-btn" onclick="removeImage('issue6', event)">×</button>
+        </div>
+        <div class="upload-item" id="upload-issue7" onclick="uploadImage('issue7')">
+          <div class="icon">🔍</div>
+          <div class="label">问题�?7</div>
+          <button type="button" class="remove-btn" onclick="removeImage('issue7', event)">×</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 问题类型 -->
+    <div class="form-section">
+      <div class="section-title">🏷�?问题类型 <span class="required">（必填）</span></div>
+      <div class="issue-types">
+        <div class="type-item" data-type="污渍" onclick="toggleType(this)">污渍</div>
+        <div class="type-item" data-type="扣子" onclick="toggleType(this)">扣子</div>
+        <div class="type-item" data-type="拉链" onclick="toggleType(this)">拉链</div>
+        <div class="type-item" data-type="尺码不符" onclick="toggleType(this)">尺码不符</div>
+        <div class="type-item" data-type="掉色" onclick="toggleType(this)">掉色</div>
+        <div class="type-item" data-type="印花问题" onclick="toggleType(this)">印花问题</div>
+        <div class="type-item" data-type="做工开线等" onclick="toggleType(this)">做工开�?/div>
+        <div class="type-item" data-type="破洞" onclick="toggleType(this)">破洞</div>
+        <div class="type-item" data-type="起球勾线掉毛" onclick="toggleType(this)">起球勾线</div>
+        <div class="type-item" data-type="过敏" onclick="toggleType(this)">过敏</div>
+        <div class="type-item" data-type="洗唛和吊牌不�? onclick="toggleType(this)">洗唛不符</div>
+        <div class="type-item" data-type="有味�? onclick="toggleType(this)">有味�?/div>
+        <div class="type-item" data-type="面料硬不舒服" onclick="toggleType(this)">面料�?/div>
+        <div class="type-item" data-type="色差" onclick="toggleType(this)">色差</div>
+        <div class="type-item" data-type="松紧�? onclick="toggleType(this)">松紧�?/div>
+        <div class="type-item" data-type="其他" onclick="toggleType(this)">其他</div>
+      </div>
+    </div>
+
+    <!-- 问题描述 -->
+    <div class="form-section">
+      <div class="section-title">📝 问题描述 <span class="required">（必填）</span></div>
+      <textarea class="textarea" id="issueDesc" placeholder="请详细描述问�?.." required></textarea>
+    </div>
+
+    <!-- 解决方式 -->
+    <div class="form-section">
+      <div class="section-title">🔧 建议解决方式 <span class="required">（必填）</span></div>
+      <div class="solution-options">
+        <div class="solution-option" data-value="退�? onclick="selectSolution(this)">退�?/div>
+        <div class="solution-option" data-value="换货" onclick="selectSolution(this)">换货</div>
+        <div class="solution-option" data-value="补偿" onclick="selectSolution(this)">补偿</div>
+        <div class="solution-option" data-value="现金补偿" onclick="selectSolution(this)">现金补偿</div>
+        <div class="solution-option" data-value="返工" onclick="selectSolution(this)">返工</div>
+      </div>
+    </div>
+  </form>
+
+  <!-- 提交按钮 -->
+  <div class="submit-btns">
+    <button type="button" class="btn btn-draft" onclick="saveDraft()">💾 保存草稿</button>
+    <button type="button" class="btn btn-submit" onclick="submitIssue()">�?提交</button>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let selectedTypes = [];
+    let selectedSolution = null;
+    let images = {};
+    let imageUrls = {};
+
+    window.addEventListener('DOMContentLoaded', function() {
+      checkLogin();
+      loadDraft();
+    });
+
+    function checkLogin() {
+      if (!localStorage.getItem('token')) {
+        window.location.href = '/qc-mobile/login.html';
+      }
+    }
+
+    function goBack() {
+      window.history.back();
+    }
+
+    function showToast(message, duration = 2000) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), duration);
+    }
+
+    function showLoading() {
+      document.getElementById('loading').classList.add('show');
+    }
+
+    function hideLoading() {
+      document.getElementById('loading').classList.remove('show');
+    }
+
+    // 根据波次号查�?    async function searchBatchByBatchNo() {
+      const batchNo = document.getElementById('batchNo').value.trim();
+      if (!batchNo || batchNo.length < 3) return;
+      
+      const token = localStorage.getItem('token');
+      try {
+        const response = await fetch(`${API_BASE}/api/batches/${encodeURIComponent(batchNo)}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          document.getElementById('factory').value = data.factory_name;
+          document.getElementById('goodsNo').value = data.goods_no;
+          showToast('已自动填�?);
+        }
+      } catch (error) {
+        console.error('查询失败:', error);
+      }
+    }
+
+    // 根据货品编码查询
+    async function searchBatchByGoodsNo() {
+      const goodsNo = document.getElementById('goodsNo').value.trim();
+      if (!goodsNo || goodsNo.length < 5) return;
+      
+      const token = localStorage.getItem('token');
+      try {
+        const response = await fetch(`${API_BASE}/api/batches/search?goods_no=${encodeURIComponent(goodsNo)}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.length > 0) {
+            document.getElementById('batchNo').value = data[0].batch_no;
+            document.getElementById('factory').value = data[0].factory_name;
+            showToast('已自动填�?);
+          }
+        }
+      } catch (error) {
+        console.error('查询失败:', error);
+      }
+    }
+
+    function toggleType(element) {
+      element.classList.toggle('selected');
+      const type = element.dataset.type;
+      if (selectedTypes.includes(type)) {
+        selectedTypes = selectedTypes.filter(t => t !== type);
+      } else {
+        selectedTypes.push(type);
+      }
+    }
+
+    function selectSolution(element) {
+      document.querySelectorAll('.solution-option').forEach(opt => opt.classList.remove('selected'));
+      element.classList.add('selected');
+      selectedSolution = element.dataset.value;
+    }
+
+    function uploadImage(type) {
+      if (images[type]) {
+        alert('图片已上传，如需更换请先删除');
+        return;
+      }
+      
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.capture = 'environment';
+      
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          showLoading();
+          const formData = new FormData();
+          formData.append('file', file);
+          
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE}/uploads`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` },
+              body: formData
+            });
+            
+            if (response.ok) {
+              const result = await response.json();
+              const uploadItem = document.getElementById(`upload-${type}`);
+              uploadItem.classList.add('has-image');
+              uploadItem.innerHTML = `<img src="${API_BASE}${result.url}"><button type="button" class="remove-btn" onclick="removeImage('${type}', event)">×</button>`;
+              images[type] = file;
+              imageUrls[type] = `${API_BASE}${result.url}`;
+              showToast('上传成功');
+            }
+          } catch (error) {
+            console.error('上传失败:', error);
+            showToast('上传失败');
+          } finally {
+            hideLoading();
+          }
+        }
+      };
+      
+      input.click();
+    }
+
+    function removeImage(type, event) {
+      event.stopPropagation();
+      const uploadItem = document.getElementById(`upload-${type}`);
+      const icon = type === 'product' ? '📦' : '🔍';
+      const label = type === 'product' ? '商品�? : `问题�?${type.slice(-1)}`;
+      uploadItem.classList.remove('has-image');
+      uploadItem.innerHTML = `<div class="icon">${icon}</div><div class="label">${label}</div><button type="button" class="remove-btn" onclick="removeImage('${type}', event)">×</button>`;
+      delete images[type];
+      delete imageUrls[type];
+    }
+
+    async function submitIssue() {
+      const token = localStorage.getItem('token');
+      const batchNo = document.getElementById('batchNo').value.trim();
+      const factory = document.getElementById('factory').value;
+      const goodsNo = document.getElementById('goodsNo').value.trim();
+      
+      if (!batchNo) { showToast('请填写波次号'); return; }
+      if (!factory) { showToast('请选择工厂'); return; }
+      if (!goodsNo) { showToast('请填写货品编�?); return; }
+      if (selectedTypes.length === 0) { showToast('请选择问题类型'); return; }
+      if (!document.getElementById('issueDesc').value.trim()) { showToast('请填写问题描�?); return; }
+      if (!selectedSolution) { showToast('请选择解决方式'); return; }
+      if (Object.keys(imageUrls).length === 0) { showToast('请至少上传一张图�?); return; }
+
+      // 获取当前用户信息
+      const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+      
+      const formData = {
+        goods_no: goodsNo,
+        factory_name: factory,
+        batch_no: batchNo,
+        issue_type: selectedTypes.join(','),
+        issue_desc: document.getElementById('issueDesc').value.trim(),
+        solution_type: selectedSolution,
+        compensation_amount: 0,
+        product_image: imageUrls['product'] || null,
+        issue_images: Object.values(imageUrls),
+        qc_user_id: userInfo.user_id || null,
+        qc_username: userInfo.username || null
+      };
+
+      showLoading();
+      const submitBtn = document.querySelector('.btn-submit');
+      submitBtn.disabled = true;
+      submitBtn.textContent = '提交�?..';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/issues`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+          showToast('提交成功');
+          setTimeout(() => window.location.href = '/qc-mobile/index.html', 1500);
+        } else {
+          const error = await response.json();
+          showToast('提交失败�? + (error.detail || '未知错误'));
+        }
+      } catch (error) {
+        console.error('提交错误:', error);
+        showToast('网络错误');
+      } finally {
+        hideLoading();
+        submitBtn.disabled = false;
+        submitBtn.textContent = '�?提交';
+      }
+    }
+
+    function saveDraft() {
+      const draft = {
+        batchNo: document.getElementById('batchNo').value,
+        factory: document.getElementById('factory').value,
+        goodsNo: document.getElementById('goodsNo').value,
+        issueDesc: document.getElementById('issueDesc').value
+      };
+      localStorage.setItem('issueDraft', JSON.stringify(draft));
+      showToast('草稿已保�?);
+    }
+
+    function loadDraft() {
+      const draftStr = localStorage.getItem('issueDraft');
+      if (draftStr) {
+        const draft = JSON.parse(draftStr);
+        document.getElementById('batchNo').value = draft.batchNo || '';
+        document.getElementById('factory').value = draft.factory || '';
+        document.getElementById('goodsNo').value = draft.goodsNo || '';
+        document.getElementById('issueDesc').value = draft.issueDesc || '';
+        localStorage.removeItem('issueDraft');
+      }
+    }
+  </script>
+    <script src="batch-suggestions.js"></script>
+</body>
+</html>
+
+
