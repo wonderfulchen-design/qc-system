@@ -553,8 +553,18 @@
     }
 
     function checkLogin() {
-      if (!localStorage.getItem('token')) {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.warn('未找到 token，跳转到登录页');
+          window.location.href = '/qc-mobile/login.html';
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.error('checkLogin 错误:', error);
         window.location.href = '/qc-mobile/login.html';
+        return false;
       }
     }
 
