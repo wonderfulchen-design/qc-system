@@ -8,10 +8,11 @@
 import os
 import sys
 
-# 使用 PyMySQL 替代 MySQLdb
+# ⚠️ 必须在导入 SQLAlchemy 之前执行
 import pymysql
 pymysql.install_as_MySQLdb()
 
+# 现在导入 SQLAlchemy
 from sqlalchemy import create_engine, text, inspect
 
 def migrate_database():
