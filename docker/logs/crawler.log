@@ -106,3 +106,15 @@ Traceback (most recent call last):
   File "/usr/local/lib/python3.10/os.py", line 225, in makedirs
     mkdir(name, mode)
 PermissionError: [Errno 13] Permission denied: '/app/data/images'
+Traceback (most recent call last):
+  File "/app/crawler.py", line 26, in <module>
+    os.makedirs(IMAGE_DIR, exist_ok=True)
+  File "/usr/local/lib/python3.10/os.py", line 225, in makedirs
+    mkdir(name, mode)
+PermissionError: [Errno 13] Permission denied: '/app/data/images'
+Traceback (most recent call last):
+  File "/app/crawler.py", line 26, in <module>
+    os.makedirs(IMAGE_DIR, exist_ok=True)
+  File "/usr/local/lib/python3.10/os.py", line 225, in makedirs
+    mkdir(name, mode)
+PermissionError: [Errno 13] Permission denied: '/app/data/images'
