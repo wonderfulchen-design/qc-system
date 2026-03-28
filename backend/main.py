@@ -45,6 +45,13 @@ ACCESS_TOKEN_EXPIRE_DAYS = int(os.getenv("ACCESS_TOKEN_EXPIRE_DAYS", "1"))
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "/app/uploads"))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+# 七牛云配置
+QINIU_ACCESS_KEY = os.getenv("QINIU_ACCESS_KEY", "")
+QINIU_SECRET_KEY = os.getenv("QINIU_SECRET_KEY", "")
+QINIU_BUCKET = os.getenv("QINIU_BUCKET", "lswsampleimg")
+QINIU_DOMAIN = os.getenv("QINIU_DOMAIN", "http://qp2bc4f1j.hn-bkt.clouddn.com").rstrip("/") + "/"
+QINIU_PREFIX = os.getenv("QINIU_PREFIX", "qcImg/")
+
 # 图片上传限制
 MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB
 MAX_IMAGE_WIDTH = 4096  # 最大宽度
@@ -1101,7 +1108,54 @@ async def create_issue_comment(
         created_at=new_comment.created_at
     )
 
-# ==================== Upload Endpoint ====================
+# ==================== Qiniu Upload Token Endpoint ====================
+
+@app.get("/api/qiniu/upload-token")
+async def get_qiniu_upload_token(
+    current_user: QCUser = Depends(get_current_user)
+):
+    """
+    获取七牛云上传凭证
+    
+    前端拿到 token 后直接上传到七牛云，返回 CDN 链接
+    """
+    if not QINIU_ACCESS_KEY or not QINIU_SECRET_KEY:
+        raise HTTPException(status_code=500, detail="七牛云配置缺失")
+    
+    try:
+        import qiniu.auth
+        import qiniu.zone
+        from qiniu import Auth
+        
+        # 初始化七牛云 Auth
+        auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
+        
+        # 设置上传策略
+        # 只允许上传到指定前缀目录
+        put_policy = {
+            'scope': f"{QINIU_BUCKET}:{QINIU_PREFIX}",
+            'deadline': int(datetime.now().timestamp()) + 3600,  # 1 小时有效期
+            'insertOnly': 0,  # 允许覆盖同名文件
+            'saveKey': f"{QINIU_PREFIX}$(etag)"  # 使用文件 hash 作为文件名
+        }
+        
+        # 生成上传凭证
+        upload_token = auth.upload_token(QINIU_BUCKET, policy=put_policy)
+        
+        return {
+            "token": upload_token,
+            "bucket": QINIU_BUCKET,
+            "domain": QINIU_DOMAIN,
+            "prefix": QINIU_PREFIX,
+            "expire": 3600
+        }
+    except ImportError:
+        raise HTTPException(status_code=500, detail="请安装七牛云 SDK: pip install qiniu")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"生成上传凭证失败：{str(e)}")
+
+
+# ==================== Upload Endpoint (Local) ====================
 
 @app.post("/uploads")
 async def upload_file(

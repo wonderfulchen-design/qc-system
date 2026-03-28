@@ -471,7 +471,7 @@
       selectedSolution = element.dataset.solution;
     }
 
-    // 上传图片
+    // 上传图片（直传七牛云）
     async function uploadImage(type) {
       const input = document.createElement('input');
       input.type = 'file';
@@ -487,42 +487,63 @@
           const compressedSize = (compressedFile.size / 1024).toFixed(1);
           console.log(`图片压缩：${originalSize}KB → ${compressedSize}KB`);
           
-          // 上传到服务器
-          const formData = new FormData();
-          formData.append('file', compressedFile);
-          
           const token = localStorage.getItem('token');
           
           try {
-            const response = await fetch(`${API_BASE}/uploads`, {
+            // 1. 先获取七牛云上传凭证
+            const tokenResp = await fetch(`${API_BASE}/api/qiniu/upload-token`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (!tokenResp.ok) {
+              throw new Error('获取上传凭证失败');
+            }
+            
+            const qiniuConfig = await tokenResp.json();
+            
+            // 2. 生成文件名（使用时间戳 + 随机数）
+            const fileExt = file.name.split('.').pop() || 'jpg';
+            const timestamp = new Date().getTime();
+            const random = Math.random().toString(36).substring(2, 8);
+            const key = `${qiniuConfig.prefix}${timestamp}_${random}.${fileExt}`;
+            
+            // 3. 直传七牛云（使用七牛云上传 endpoint）
+            const formData = new FormData();
+            formData.append('token', qiniuConfig.token);
+            formData.append('key', key);
+            formData.append('file', compressedFile);
+            
+            // 七牛云上传地址（华东区域）
+            const uploadUrl = 'https://up.qiniup.com';
+            
+            const uploadResp = await fetch(uploadUrl, {
               method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`
-              },
               body: formData
             });
             
-            if (response.ok) {
-              const result = await response.json();
-              const url = result.url;
-              
-              images[type] = compressedFile;
-              imageUrls[type] = url;
-              
-              const uploadItem = document.getElementById(`upload-${type}`);
-              uploadItem.classList.add('has-image');
-              uploadItem.innerHTML = `
-                <img src="${url}">
-                <button type="button" class="remove-btn" onclick="removeImage('${type}', event)">×</button>
-              `;
-              
-              showToast('上传成功！');
-            } else {
-              alert('上传失败，请重试');
+            if (!uploadResp.ok) {
+              throw new Error('上传到七牛云失败');
             }
+            
+            const uploadResult = await uploadResp.json();
+            
+            // 4. 构建 CDN 链接
+            const cdnUrl = `${qiniuConfig.domain}${uploadResult.key}`;
+            
+            images[type] = compressedFile;
+            imageUrls[type] = cdnUrl;
+            
+            const uploadItem = document.getElementById(`upload-${type}`);
+            uploadItem.classList.add('has-image');
+            uploadItem.innerHTML = `
+              <img src="${cdnUrl}">
+              <button type="button" class="remove-btn" onclick="removeImage('${type}', event)">×</button>
+            `;
+            
+            showToast('上传成功！');
           } catch (error) {
             console.error('上传失败:', error);
-            alert('上传失败，请重试');
+            alert('上传失败：' + error.message + '\n请检查网络或联系管理员');
           } finally {
             hideLoading();
           }
