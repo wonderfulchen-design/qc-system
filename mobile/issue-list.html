@@ -92,11 +92,7 @@
 
   <div class="pagination">
     <button class="page-btn" onclick="changePage(-1)" id="prevBtn">上一页</button>
-    <button class="page-btn active" onclick="goToPage(1)">1</button>
-    <button class="page-btn" onclick="goToPage(2)">2</button>
-    <button class="page-btn" onclick="goToPage(3)">3</button>
-    <button class="page-btn" onclick="goToPage(4)">4</button>
-    <button class="page-btn" onclick="goToPage(5)">5</button>
+    <div id="pageNumbers" style="display: flex; gap: 8px;"></div>
     <button class="page-btn" onclick="changePage(1)" id="nextBtn">下一页</button>
   </div>
 
@@ -130,9 +126,49 @@
 
     window.addEventListener('DOMContentLoaded', function() {
       checkLogin();
+      restoreListState();
       loadIssues();
       initFilterButtons();
     });
+    
+    // 恢复列表状态
+    function restoreListState() {
+      try {
+        const savedState = sessionStorage.getItem('issueListState');
+        if (savedState) {
+          const state = JSON.parse(savedState);
+          currentPage = state.currentPage || 1;
+          selectedFilterType = state.filterType || 'all';
+          selectedFilterValue = state.filterValue || '';
+          searchKeyword = state.searchKeyword || '';
+          
+          // 更新筛选按钮状态
+          if (selectedFilterValue && selectedFilterType !== 'all') {
+            const filterBtn = document.querySelector(`.filter-btn[data-filter="${selectedFilterType}"]`);
+            if (filterBtn) {
+              let label = selectedFilterType === 'factory' ? '🏭' : selectedFilterType === 'designer' ? '👨‍🎨' : '📋';
+              filterBtn.textContent = `${label} ${selectedFilterValue}`;
+              
+              // 重置其他按钮
+              document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.dataset.filter !== selectedFilterType) {
+                  const type = btn.dataset.filter;
+                  btn.textContent = type === 'factory' ? '🏭 工厂' : type === 'designer' ? '👨‍🎨 设计师' : type === 'merchandiser' ? '📋 跟单员' : '🔍 全部';
+                  btn.classList.remove('active');
+                } else {
+                  btn.classList.add('active');
+                }
+              });
+            }
+          }
+          
+          // 清除保存的状态
+          sessionStorage.removeItem('issueListState');
+        }
+      } catch (e) {
+        console.error('恢复列表状态失败:', e);
+      }
+    }
 
     function checkLogin() {
       if (!localStorage.getItem('token')) {
@@ -246,12 +282,41 @@
         };
         
         document.getElementById('confirmFilter').onclick = function() {
-          selectedFilterValue = document.getElementById('filterSelect').value;
-          const filterBtn = document.querySelector(`.filter-btn[data-filter="${filterType}"]`);
-          if (filterBtn) {
-            let label = filterType === 'factory' ? '🏭' : filterType === 'designer' ? '👨‍🎨' : '📋';
-            filterBtn.textContent = selectedFilterValue ? `${label} ${selectedFilterValue}` : (filterType === 'factory' ? '🏭 工厂' : filterType === 'designer' ? '👨‍🎨 设计师' : '📋 跟单员');
+          const selectedValue = document.getElementById('filterSelect').value;
+          
+          // 清除其他筛选条件，只保留当前选择的筛选类型
+          if (selectedValue) {
+            selectedFilterType = filterType;
+            selectedFilterValue = selectedValue;
+            
+            // 重置其他筛选按钮的文字
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+              if (btn.dataset.filter !== filterType) {
+                const type = btn.dataset.filter;
+                btn.textContent = type === 'factory' ? '🏭 工厂' : type === 'designer' ? '👨‍🎨 设计师' : type === 'merchandiser' ? '📋 跟单员' : '🔍 全部';
+                btn.classList.remove('active');
+              }
+            });
+            
+            // 更新当前筛选按钮的文字
+            const filterBtn = document.querySelector(`.filter-btn[data-filter="${filterType}"]`);
+            if (filterBtn) {
+              let label = filterType === 'factory' ? '🏭' : filterType === 'designer' ? '👨‍🎨' : '📋';
+              filterBtn.textContent = `${label} ${selectedValue}`;
+              filterBtn.classList.add('active');
+            }
+          } else {
+            // 如果选择"全部"，重置所有筛选
+            selectedFilterType = 'all';
+            selectedFilterValue = '';
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+              const type = btn.dataset.filter;
+              btn.textContent = type === 'factory' ? '🏭 工厂' : type === 'designer' ? '👨‍🎨 设计师' : type === 'merchandiser' ? '📋 跟单员' : '🔍 全部';
+              btn.classList.remove('active');
+            });
+            document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
           }
+          
           document.getElementById('filterOverlay').remove();
           this.parentElement.parentElement.parentElement.remove();
           loadIssues();
@@ -340,27 +405,74 @@
     function updatePagination(totalPages) {
       const prevBtn = document.getElementById('prevBtn');
       const nextBtn = document.getElementById('nextBtn');
+      const pageNumbers = document.getElementById('pageNumbers');
       
       if (prevBtn) prevBtn.disabled = currentPage <= 1;
       if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
       
-      // 更新页码显示
-      const pageButtons = document.querySelectorAll('.page-btn:not(#prevBtn):not(#nextBtn)');
-      pageButtons.forEach((btn, index) => {
-        if (btn.textContent === '...') return;
+      // 动态生成页码按钮
+      pageNumbers.innerHTML = '';
+      
+      // 最多显示 7 个页码（包括当前页）
+      let startPage = Math.max(1, currentPage - 3);
+      let endPage = Math.min(totalPages, startPage + 6);
+      
+      // 调整起始页，确保始终显示 7 个页码（如果可能）
+      if (endPage - startPage < 6) {
+        startPage = Math.max(1, endPage - 6);
+      }
+      
+      // 添加第一页（如果不在范围内）
+      if (startPage > 1) {
+        const firstBtn = document.createElement('button');
+        firstBtn.className = 'page-btn';
+        firstBtn.textContent = '1';
+        firstBtn.onclick = () => goToPage(1);
+        pageNumbers.appendChild(firstBtn);
         
-        const pageNum = index + 1;
-        if (pageNum <= totalPages) {
-          btn.style.display = 'block';
-          if (pageNum === currentPage) {
-            btn.classList.add('active');
-          } else {
-            btn.classList.remove('active');
-          }
-        } else {
-          btn.style.display = 'none';
+        if (startPage > 2) {
+          const ellipsis = document.createElement('span');
+          ellipsis.textContent = '...';
+          ellipsis.style.padding = '8px';
+          pageNumbers.appendChild(ellipsis);
         }
-      });
+      }
+      
+      // 添加页码
+      for (let i = startPage; i <= endPage; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'page-btn';
+        btn.textContent = i;
+        if (i === currentPage) {
+          btn.classList.add('active');
+        }
+        btn.onclick = () => goToPage(i);
+        pageNumbers.appendChild(btn);
+      }
+      
+      // 添加最后一页（如果不在范围内）
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          const ellipsis = document.createElement('span');
+          ellipsis.textContent = '...';
+          ellipsis.style.padding = '8px';
+          pageNumbers.appendChild(ellipsis);
+        }
+        
+        const lastBtn = document.createElement('button');
+        lastBtn.className = 'page-btn';
+        lastBtn.textContent = totalPages.toString();
+        lastBtn.onclick = () => goToPage(totalPages);
+        pageNumbers.appendChild(lastBtn);
+      }
+    }
+
+    // 七牛云图片域名替换为自定义域名
+    function replaceQiniuDomain(url) {
+      if (!url) return url;
+      const customDomain = 'https://sample.yoursecret.ltd';
+      // 替换七牛云默认域名
+      return url.replace(/https?:\/\/qp2bc4f1j\.hn-bkt\.clouddn\.com/, customDomain);
     }
 
     function renderIssues(issues) {
@@ -372,7 +484,9 @@
 
       container.innerHTML = issues.map(issue => {
         // 安全检查：确保 issue_images 是数组
-        const issueImages = Array.isArray(issue.issue_images) ? issue.issue_images : [];
+        let issueImages = Array.isArray(issue.issue_images) ? issue.issue_images : [];
+        // 替换图片域名
+        issueImages = issueImages.map(replaceQiniuDomain);
         const hasImages = issueImages.length > 0;
         
         return `
@@ -507,8 +621,19 @@
     }
 
     function viewDetailByNo(issueNo) {
+      // 保存当前列表状态
+      const listState = {
+        currentPage: currentPage,
+        filterType: selectedFilterType,
+        filterValue: selectedFilterValue,
+        searchKeyword: searchKeyword
+      };
+      
+      // 将状态编码到 URL 参数中
+      const stateParam = encodeURIComponent(JSON.stringify(listState));
+      
       // 只使用问题编码（安全），不暴露数字 ID
-      window.location.href = `/qc-mobile/issue-detail.html?no=${encodeURIComponent(issueNo)}`;
+      window.location.href = `/qc-mobile/issue-detail.html?no=${encodeURIComponent(issueNo)}&listState=${stateParam}`;
     }
     
     function handleCardClick(cardElement) {

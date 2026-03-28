@@ -212,7 +212,32 @@
     }
 
     function goBack() {
-      window.location.href = '/qc-mobile/index.html';
+      // 保存当前问题详情页的返回列表状态
+      const listState = {
+        currentPage: 1,
+        filterType: 'all',
+        filterValue: '',
+        searchKeyword: ''
+      };
+      
+      // 尝试从 URL 参数获取返回列表的状态
+      const urlParams = new URLSearchParams(window.location.search);
+      const returnState = urlParams.get('listState');
+      
+      if (returnState) {
+        try {
+          const state = JSON.parse(decodeURIComponent(returnState));
+          Object.assign(listState, state);
+        } catch (e) {
+          console.error('解析列表状态失败:', e);
+        }
+      }
+      
+      // 保存状态到 sessionStorage
+      sessionStorage.setItem('issueListState', JSON.stringify(listState));
+      
+      // 返回列表页
+      window.location.href = '/qc-mobile/issue-list.html';
     }
 
     function getIssueNo() {
@@ -364,9 +389,25 @@
     }
 
     // 模拟数据已移除 - 直接从 API 加载真实数据
+    
+    // 七牛云图片域名替换为自定义域名
+    function replaceQiniuDomain(url) {
+      if (!url) return url;
+      const customDomain = 'https://sample.yoursecret.ltd';
+      // 替换七牛云默认域名
+      return url.replace(/https?:\/\/qp2bc4f1j\.hn-bkt\.clouddn\.com/, customDomain);
+    }
 
     function renderIssue(data) {
       const container = document.getElementById('issueContent');
+      
+      // 替换图片域名
+      if (data.product_image) {
+        data.product_image = replaceQiniuDomain(data.product_image);
+      }
+      if (data.issue_images && Array.isArray(data.issue_images)) {
+        data.issue_images = data.issue_images.map(replaceQiniuDomain);
+      }
       container.innerHTML = `
         <span class="status-badge ${data.status}">${getStatusText(data.status)}</span>
         

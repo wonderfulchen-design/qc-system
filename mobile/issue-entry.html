@@ -507,14 +507,16 @@
             const random = Math.random().toString(36).substring(2, 8);
             const key = `${qiniuConfig.prefix}${timestamp}_${random}.${fileExt}`;
             
-            // 3. 直传七牛云（使用七牛云上传 endpoint）
+            // 3. 直传七牛云（华南区域）
             const formData = new FormData();
             formData.append('token', qiniuConfig.token);
             formData.append('key', key);
             formData.append('file', compressedFile);
             
-            // 七牛云上传地址（华东区域）
-            const uploadUrl = 'https://up.qiniup.com';
+            // 七牛云上传地址（华南区域 z2）
+            const uploadUrl = 'https://up-z2.qiniup.com';
+            
+            console.log('七牛云上传区域：华南 (up-z2.qiniup.com)');
             
             const uploadResp = await fetch(uploadUrl, {
               method: 'POST',

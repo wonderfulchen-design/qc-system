@@ -23,6 +23,8 @@ import jwt
 import hashlib
 import os
 import json
+import httpx
+import urllib.parse
 from pathlib import Path
 
 # Database
@@ -51,6 +53,13 @@ QINIU_SECRET_KEY = os.getenv("QINIU_SECRET_KEY", "")
 QINIU_BUCKET = os.getenv("QINIU_BUCKET", "lswsampleimg")
 QINIU_DOMAIN = os.getenv("QINIU_DOMAIN", "http://qp2bc4f1j.hn-bkt.clouddn.com").rstrip("/") + "/"
 QINIU_PREFIX = os.getenv("QINIU_PREFIX", "qcImg/")
+
+# 企业微信配置
+WECHAT_CORP_ID = os.getenv("WECHAT_CORP_ID", "")
+WECHAT_AGENT_ID = os.getenv("WECHAT_AGENT_ID", "")
+WECHAT_SECRET = os.getenv("WECHAT_SECRET", "")
+WECHAT_REDIRECT_URI = os.getenv("WECHAT_REDIRECT_URI", "")
+WECHAT_WEBHOOK_URL = os.getenv("WECHAT_WEBHOOK_URL", "")
 
 # 图片上传限制
 MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB
@@ -110,6 +119,7 @@ class QualityIssue(Base):
     factory_name = Column(String(64), index=True)
     batch_no = Column(String(32), index=True)
     pattern_batch = Column(String(32))
+    merchandiser = Column(String(32))  # 订单跟单员
     designer = Column(String(32))
     handler = Column(String(32))
     batch_source = Column(String(32))
@@ -554,28 +564,6 @@ async def search_batches(
     ]
 
 
-@app.get("/api/batches/{batch_no}", response_model=BatchResponse)
-async def get_batch_by_no(
-    batch_no: str,
-    current_user: QCUser = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    batch = db.query(ProductBatch).filter(
-        ProductBatch.batch_no == batch_no
-    ).first()
-    
-    if not batch:
-        raise HTTPException(status_code=404, detail="Batch not found")
-    
-    return {
-        "batch_no": batch.batch_no,
-        "factory_name": batch.factory_name,
-        "goods_no": batch.goods_no,
-        "merchandiser": batch.merchandiser,
-        "designer": batch.designer
-    }
-
-
 # ==================== Batch CRUD Endpoints ====================
 
 @app.get("/api/batches/list", response_model=BatchListResponse)
@@ -627,6 +615,29 @@ async def test_batch_endpoint(
 ):
     """测试端点"""
     return {"message": "Batch API is working", "user": current_user.username}
+
+
+@app.get("/api/batches/{batch_no}", response_model=BatchResponse)
+async def get_batch_by_no(
+    batch_no: str,
+    current_user: QCUser = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """根据波次号查询单个波次信息（必须在所有具体路径之后）"""
+    batch = db.query(ProductBatch).filter(
+        ProductBatch.batch_no == batch_no
+    ).first()
+    
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    return {
+        "batch_no": batch.batch_no,
+        "factory_name": batch.factory_name,
+        "goods_no": batch.goods_no,
+        "merchandiser": batch.merchandiser,
+        "designer": batch.designer
+    }
 
 
 @app.post("/api/batches/batch")
@@ -874,6 +885,38 @@ async def create_issue(
         db.add(db_issue)
         db.commit()
         db.refresh(db_issue)
+        
+        # 从波次号查询 merchandiser 和 designer
+        merchandiser = ''
+        designer = ''
+        if db_issue.batch_no:
+            batch = db.query(ProductBatch).filter(ProductBatch.batch_no == db_issue.batch_no).first()
+            if batch:
+                merchandiser = batch.merchandiser or ''
+                designer = batch.designer or ''
+                
+                # 更新问题记录的 merchandiser 和 designer
+                db_issue.merchandiser = merchandiser
+                db_issue.designer = designer
+                db.commit()
+        
+        # 获取问题图片列表
+        issue_images = db_issue.issue_images or []
+        
+        # 发送企业微信通知
+        await send_wechat_notification(
+            issue_no=db_issue.issue_no,
+            batch_no=db_issue.batch_no,
+            factory_name=db_issue.factory_name,
+            goods_no=db_issue.goods_no,
+            merchandiser=merchandiser,
+            designer=designer,
+            issue_type=db_issue.issue_type,
+            product_image=db_issue.product_image,
+            issue_images=issue_images,
+            username=current_user.username,
+            created_at=db_issue.created_at
+        )
         
         return db_issue
         
@@ -1480,6 +1523,83 @@ async def root():
         "docs": "/docs",
         "uploads": "/uploads/"
     }
+
+
+# ==================== WeChat Work Notification ====================
+
+async def send_wechat_notification(issue_no: str, batch_no: str, factory_name: str, goods_no: str, merchandiser: str, designer: str, issue_type: str, product_image: str, issue_images: list, username: str, created_at: datetime):
+    """发送企业微信通知"""
+    if not WECHAT_WEBHOOK_URL:
+        return
+    
+    try:
+        # 获取第一张问题图片
+        first_issue_image = issue_images[0] if issue_images and len(issue_images) > 0 else None
+        
+        # 构建消息内容
+        content = f"""📝 新问题通知
+
+🔢 波次号：{batch_no or '无'}
+🏭 工厂：{factory_name or '未知'}
+👔 跟单：{merchandiser or '无'}
+👨‍🎨 设计师：{designer or '无'}
+📦 货品编码：{goods_no or '未知'}
+🏷️ 问题类型：{issue_type}
+👤 提交人：{username}
+🕐 提交时间：{created_at.strftime('%Y-%m-%d %H:%M') if created_at else '刚刚'}
+
+🔗 查看详情：{WECHAT_REDIRECT_URI}/qc-mobile/issue-detail.html?no={urllib.parse.quote(issue_no)}"""
+        
+        # 如果有图片，发送图文消息
+        if first_issue_image:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    WECHAT_WEBHOOK_URL,
+                    json={
+                        "msgtype": "news",
+                        "news": {
+                            "articles": [
+                                {
+                                    "title": f"📝 新问题通知 - {factory_name or '未知工厂'}",
+                                    "description": f"波次号：{batch_no or '无'}\n问题类型：{issue_type}\n提交人：{username}",
+                                    "url": f"{WECHAT_REDIRECT_URI}/qc-mobile/issue-detail.html?no={urllib.parse.quote(issue_no)}",
+                                    "picurl": first_issue_image
+                                }
+                            ]
+                        }
+                    },
+                    timeout=10.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get("errcode") == 0:
+                        print(f"✅ 企业微信推送成功（带图）：{issue_no}")
+                    else:
+                        print(f"❌ 企业微信推送失败：{result}")
+        else:
+            # 没有图片，发送文本消息
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    WECHAT_WEBHOOK_URL,
+                    json={
+                        "msgtype": "text",
+                        "text": {
+                            "content": content
+                        }
+                    },
+                    timeout=10.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get("errcode") == 0:
+                        print(f"✅ 企业微信推送成功（文本）：{issue_no}")
+                    else:
+                        print(f"❌ 企业微信推送失败：{result}")
+    except Exception as e:
+        print(f"❌ 发送企业微信通知失败：{e}")
+
 
 # 挂载静态文件目录（在 app 创建后）
 # 使用 ONCE 标记确保只挂载一次

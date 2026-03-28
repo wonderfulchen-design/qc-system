@@ -300,6 +300,7 @@
       <a href="#" onclick="alert('请联系管理员重置密码')">忘记密码？</a>
     </div>
 
+    <!-- 企业微信登录暂未启用 - 需要备案域名
     <div class="divider"><span>或</span></div>
 
     <div class="wecom-login">
@@ -308,12 +309,11 @@
         企业微信快捷登录
       </button>
     </div>
+    -->
 
     <div class="tips">
       <div class="tips-title">💡 温馨提示</div>
       <div class="tips-content">
-        默认管理员账号：admin / admin123<br>
-        首次登录请修改密码<br>
         如遇问题请联系系统管理员
       </div>
     </div>
@@ -422,17 +422,23 @@
     });
 
     // 企业微信登录
-    function wecomLogin() {
-      // 企业微信 OAuth2 授权
-      const corpId = 'YOUR_CORP_ID'; // 替换为企业 ID
-      const agentId = 'YOUR_AGENT_ID'; // 替换为应用 AgentId
-      const redirectUri = encodeURIComponent(window.location.href);
-      
-      // 构造授权 URL
-      const authUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${corpId}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_privateinfo&agentid=${agentId}#wechat_redirect`;
-      
-      // 跳转到企业微信授权
-      window.location.href = authUrl;
+    async function wecomLogin() {
+      try {
+        // 从后端获取企业微信授权 URL
+        const response = await fetch(`${API_BASE}/api/auth/wechat-url`);
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || '获取授权 URL 失败');
+        }
+        
+        const data = await response.json();
+        
+        // 跳转到企业微信授权
+        window.location.href = data.auth_url;
+      } catch (error) {
+        alert('企业微信登录暂时不可用：' + error.message + '\n\n请使用账号密码登录');
+      }
     }
 
     // 显示错误消息
