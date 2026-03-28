@@ -534,8 +534,14 @@ async def search_batches(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    """搜索波次（添加缓存）"""
     if not batch_no and not goods_no:
         return []
+    
+    # 简单的内存缓存（生产环境建议用 Redis）
+    cache_key = f"search:{batch_no}:{goods_no}"
+    if hasattr(search_batches, 'cache') and cache_key in search_batches.cache:
+        return search_batches.cache[cache_key]
     
     query = db.query(ProductBatch)
     
@@ -544,15 +550,10 @@ async def search_batches(
     if goods_no:
         query = query.filter(ProductBatch.goods_no.like(f"%{goods_no}%"))
     
-    # 按 ID 降序排序（最新的在最上面）
+    # 限制返回数量，提高查询速度
     results = query.order_by(ProductBatch.id.desc()).limit(10).all()
     
-    # Debug log
-    import logging
-    for r in results:
-        logging.warning(f"Batch: {r.batch_no}, merchandiser: {r.merchandiser}, designer: {r.designer}")
-    
-    return [
+    response_data = [
         {
             "batch_no": r.batch_no,
             "factory_name": r.factory_name,
@@ -562,6 +563,17 @@ async def search_batches(
         }
         for r in results
     ]
+    
+    # 缓存结果（最多保留 100 条）
+    if not hasattr(search_batches, 'cache'):
+        search_batches.cache = {}
+    search_batches.cache[cache_key] = response_data
+    if len(search_batches.cache) > 100:
+        # 删除最旧的缓存
+        oldest_key = next(iter(search_batches.cache))
+        del search_batches.cache[oldest_key]
+    
+    return response_data
 
 
 # ==================== Batch CRUD Endpoints ====================

@@ -48,10 +48,17 @@
     
     .tag { display: inline-block; padding: 4px 12px; background: #f5f6f8; border-radius: 12px; font-size: 13px; color: #666; margin-right: 8px; margin-bottom: 8px; }
     
-    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
+    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; }
     .modal.show { display: flex; }
-    .modal img { max-width: 90%; max-height: 80vh; border-radius: 8px; }
-    .modal-close { position: absolute; top: 20px; right: 20px; font-size: 30px; color: #fff; cursor: pointer; }
+    .modal img { max-width: 90%; max-height: 80vh; border-radius: 8px; cursor: zoom-in; touch-action: none; }
+    .modal img.zoomed { max-width: none; max-height: none; width: auto; height: auto; cursor: zoom-out; }
+    .modal-close { position: absolute; top: 20px; right: 20px; font-size: 30px; color: #fff; cursor: pointer; z-index: 1001; -webkit-tap-highlight-color: transparent; }
+    .modal-nav { position: absolute; top: 50%; transform: translateY(-50%); font-size: 40px; color: #fff; cursor: pointer; z-index: 1001; padding: 20px; background: rgba(0,0,0,0.5); border-radius: 50%; user-select: none; -webkit-tap-highlight-color: transparent; }
+    .modal-nav:hover { background: rgba(255,255,255,0.2); }
+    .modal-nav:active { background: rgba(255,255,255,0.3); }
+    .modal-nav.prev { left: 20px; }
+    .modal-nav.next { right: 20px; }
+    .modal-counter { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 14px; background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 20px; }
     
     /* 评论功能样式 */
     .comments-section { margin-top: 20px; }
@@ -103,9 +110,12 @@
   </div>
 
   <!-- 图片预览模态框 -->
-  <div class="modal" id="imageModal" onclick="closeImage()">
-    <span class="modal-close">×</span>
-    <img id="modalImage" src="" alt="">
+  <div class="modal" id="imageModal" onclick="handleModalClick(event)">
+    <span class="modal-close" onclick="closeImage()">×</span>
+    <span class="modal-nav prev" onclick="showPrevImage(event)">❮</span>
+    <span class="modal-nav next" onclick="showNextImage(event)">❯</span>
+    <img id="modalImage" src="" alt="" onclick="toggleZoom(event)">
+    <div class="modal-counter" id="modalCounter">1 / 9</div>
   </div>
 
   <!-- 昵称设置模态框 -->
@@ -452,7 +462,9 @@
           <div class="card-title">📦 商品图片</div>
           <div class="image-gallery" style="grid-template-columns: repeat(1, 1fr); max-width: 400px; margin: 0 auto;">
             ${data.product_image ? `
-              <div class="gallery-item" onclick="showImage('${data.product_image}')" style="aspect-ratio: 1;">
+              <div class="gallery-item" onclick="showImage('${data.product_image}', 0, [${data.issue_images && data.issue_images.length > 0 ? 
+                `'${data.product_image}',${data.issue_images.map(img => `'${img}'`).join(',')}` : 
+                `'${data.product_image}'`}])" style="aspect-ratio: 1;">
                 <img src="${data.product_image}" alt="商品图">
                 <div class="label">商品图</div>
               </div>
@@ -464,7 +476,7 @@
           <div class="card-title">📷 问题图片</div>
           <div class="image-gallery">
             ${data.issue_images && data.issue_images.length > 0 ? data.issue_images.map((img, i) => `
-              <div class="gallery-item" onclick="showImage('${img}')">
+              <div class="gallery-item" onclick="showImage('${img}', ${i + 1}, [${data.product_image ? `'${data.product_image}',` : ''}${data.issue_images.map(image => `'${image}'`).join(',')}])">
                 <img src="${img}" alt="问题图${i+1}">
                 <div class="label">问题图${i+1}</div>
               </div>
@@ -551,13 +563,186 @@
       return new Date(dateStr).toLocaleString('zh-CN');
     }
 
-    function showImage(src) {
-      document.getElementById('modalImage').src = src;
-      document.getElementById('imageModal').classList.add('show');
+    // 图片相关功能
+    let currentImageIndex = 0;
+    let allImages = [];
+    let isZoomed = false;
+    
+    // 触摸相关变量
+    let touchStartX = 0;
+    let touchEndX = 0;
+    let touchStartY = 0;
+    let isDragging = false;
+    let dragDistance = 0;
+
+    function showImage(src, index = 0, images = []) {
+      const modal = document.getElementById('imageModal');
+      const modalImg = document.getElementById('modalImage');
+      const counter = document.getElementById('modalCounter');
+      
+      // 保存所有图片
+      allImages = images.length > 0 ? images : [src];
+      currentImageIndex = index;
+      
+      // 显示图片
+      modalImg.src = allImages[currentImageIndex];
+      modalImg.classList.remove('zoomed');
+      modalImg.style.transform = 'translateX(0px)';
+      modalImg.style.transition = '';
+      isZoomed = false;
+      
+      // 更新计数器
+      counter.textContent = `${currentImageIndex + 1} / ${allImages.length}`;
+      
+      // 显示模态框
+      modal.classList.add('show');
+      
+      // 阻止背景页面滚动（iOS 兼容）
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.overflow = 'hidden';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
     }
 
     function closeImage() {
-      document.getElementById('imageModal').classList.remove('show');
+      const modal = document.getElementById('imageModal');
+      modal.classList.remove('show');
+      
+      // 恢复背景页面滚动
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.overflow = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      
+      isZoomed = false;
+    }
+
+    function handleModalClick(event) {
+      // 点击背景关闭
+      if (event.target === document.getElementById('imageModal')) {
+        closeImage();
+      }
+    }
+
+    function toggleZoom(event) {
+      event.stopPropagation();
+      const modalImg = document.getElementById('modalImage');
+      
+      // iOS 双击放大
+      if (event.type === 'dblclick' || event.detail === 2) {
+        isZoomed = !isZoomed;
+        modalImg.classList.toggle('zoomed');
+      } else if (event.type === 'click') {
+        // 桌面端单击切换
+        isZoomed = !isZoomed;
+        modalImg.classList.toggle('zoomed');
+      }
+    }
+
+    // 为 iOS 添加双击事件监听
+    document.getElementById('modalImage').addEventListener('dblclick', toggleZoom);
+
+    function showPrevImage(event) {
+      event.stopPropagation();
+      if (allImages.length > 1) {
+        currentImageIndex = (currentImageIndex - 1 + allImages.length) % allImages.length;
+        updateModalImage();
+      }
+    }
+
+    function showNextImage(event) {
+      event.stopPropagation();
+      if (allImages.length > 1) {
+        currentImageIndex = (currentImageIndex + 1) % allImages.length;
+        updateModalImage();
+      }
+    }
+
+    function updateModalImage() {
+      const modalImg = document.getElementById('modalImage');
+      const counter = document.getElementById('modalCounter');
+      modalImg.src = allImages[currentImageIndex];
+      counter.textContent = `${currentImageIndex + 1} / ${allImages.length}`;
+      modalImg.classList.remove('zoomed');
+      isZoomed = false;
+    }
+
+    // 键盘导航
+    document.addEventListener('keydown', function(event) {
+      const modal = document.getElementById('imageModal');
+      if (!modal.classList.contains('show')) return;
+      
+      if (event.key === 'Escape') {
+        closeImage();
+      } else if (event.key === 'ArrowLeft') {
+        showPrevImage(event);
+      } else if (event.key === 'ArrowRight') {
+        showNextImage(event);
+      }
+    });
+
+    // 触摸滑动支持（修复 iOS 兼容性）
+    let touchStartX = 0;
+    let touchEndX = 0;
+    let touchStartY = 0;
+    let touchEndY = 0;
+
+    const modal = document.getElementById('imageModal');
+    
+    // iOS Safari 需要 passive: false 才能 preventDefault
+    modal.addEventListener('touchstart', function(e) {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+      isDragging = true;
+      dragDistance = 0;
+      
+      // 移除过渡效果，让图片跟随手指
+      modalImg.style.transition = 'none';
+    }, {passive: true});
+
+    modal.addEventListener('touchmove', function(e) {
+      // 完全阻止默认滚动和缩放行为
+      e.preventDefault();
+      
+      if (isDragging && !isZoomed) {
+        touchEndX = e.changedTouches[0].screenX;
+        dragDistance = touchEndX - touchStartX;
+        
+        // 图片跟随手指移动（带阻力效果）
+        if (Math.abs(dragDistance) < 300) {
+          modalImg.style.transform = `translateX(${dragDistance}px) scale(${1 - Math.abs(dragDistance) / 1000})`;
+        }
+      }
+    }, {passive: false});
+
+    modal.addEventListener('touchend', function(e) {
+      isDragging = false;
+      
+      // 恢复过渡效果
+      modalImg.style.transition = 'transform 0.3s ease';
+      modalImg.style.transform = 'translateX(0px) scale(1)';
+      
+      handleSwipe();
+    }, {passive: true});
+
+    function handleSwipe() {
+      const swipeThreshold = 100; // 增加滑动阈值
+      const diffX = touchStartX - touchEndX;
+      
+      // 判断滑动距离
+      if (Math.abs(diffX) > swipeThreshold) {
+        if (diffX > 0) {
+          // 向左滑动 - 下一张
+          showNextImage();
+        } else {
+          // 向右滑动 - 上一张
+          showPrevImage();
+        }
+      }
+      // 滑动距离不够，图片会自动弹回原位（通过 CSS transition）
     }
 
     function shareIssue() {

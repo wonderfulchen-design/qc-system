@@ -471,25 +471,39 @@
       selectedSolution = element.dataset.solution;
     }
 
-    // 上传图片（直传七牛云）
-    async function uploadImage(type) {
+    // 批量上传图片（直传七牛云）
+    async function uploadImage(startType = 'product') {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
+      input.multiple = true; // 允许多选
       
       input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          // 压缩图片
-          const compressedFile = await compressImage(file);
-          
-          const originalSize = (file.size / 1024).toFixed(1);
-          const compressedSize = (compressedFile.size / 1024).toFixed(1);
-          console.log(`图片压缩：${originalSize}KB → ${compressedSize}KB`);
-          
-          const token = localStorage.getItem('token');
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+        
+        console.log(`准备上传 ${files.length} 张图片...`);
+        
+        const token = localStorage.getItem('token');
+        let uploadCount = 0;
+        let successCount = 0;
+        
+        // 显示上传进度
+        showLoading(`正在上传 ${uploadCount}/${files.length}...`);
+        
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          uploadCount = i + 1;
+          showLoading(`正在上传 ${uploadCount}/${files.length}...`);
           
           try {
+            // 压缩图片
+            const compressedFile = await compressImage(file);
+            
+            const originalSize = (file.size / 1024).toFixed(1);
+            const compressedSize = (compressedFile.size / 1024).toFixed(1);
+            console.log(`图片压缩：${originalSize}KB → ${compressedSize}KB`);
+            
             // 1. 先获取七牛云上传凭证
             const tokenResp = await fetch(`${API_BASE}/api/qiniu/upload-token`, {
               headers: { 'Authorization': `Bearer ${token}` }
@@ -505,7 +519,7 @@
             const fileExt = file.name.split('.').pop() || 'jpg';
             const timestamp = new Date().getTime();
             const random = Math.random().toString(36).substring(2, 8);
-            const key = `${qiniuConfig.prefix}${timestamp}_${random}.${fileExt}`;
+            const key = `${qiniuConfig.prefix}${timestamp}_${random}_${i}.${fileExt}`;
             
             // 3. 直传七牛云（华南区域）
             const formData = new FormData();
@@ -515,8 +529,6 @@
             
             // 七牛云上传地址（华南区域 z2）
             const uploadUrl = 'https://up-z2.qiniup.com';
-            
-            console.log('七牛云上传区域：华南 (up-z2.qiniup.com)');
             
             const uploadResp = await fetch(uploadUrl, {
               method: 'POST',
@@ -532,24 +544,43 @@
             // 4. 构建 CDN 链接
             const cdnUrl = `${qiniuConfig.domain}${uploadResult.key}`;
             
-            images[type] = compressedFile;
-            imageUrls[type] = cdnUrl;
+            // 5. 自动分配到空位
+            let assigned = false;
+            const allSlots = ['product', 'issue1', 'issue2', 'issue3', 'issue4', 'issue5', 'issue6', 'issue7', 'issue8'];
+            let startIndex = allSlots.indexOf(startType);
+            if (startIndex === -1) startIndex = 0;
             
-            const uploadItem = document.getElementById(`upload-${type}`);
-            uploadItem.classList.add('has-image');
-            uploadItem.innerHTML = `
-              <img src="${cdnUrl}">
-              <button type="button" class="remove-btn" onclick="removeImage('${type}', event)">×</button>
-            `;
+            // 从当前位置开始找空位
+            for (let j = 0; j < allSlots.length; j++) {
+              const slotIndex = (startIndex + j) % allSlots.length;
+              const slot = allSlots[slotIndex];
+              const uploadItem = document.getElementById(`upload-${slot}`);
+              
+              if (!uploadItem.classList.contains('has-image')) {
+                images[slot] = compressedFile;
+                imageUrls[slot] = cdnUrl;
+                uploadItem.classList.add('has-image');
+                uploadItem.innerHTML = `
+                  <img src="${cdnUrl}">
+                  <button type="button" class="remove-btn" onclick="removeImage('${slot}', event)">×</button>
+                `;
+                assigned = true;
+                successCount++;
+                break;
+              }
+            }
             
-            showToast('上传成功！');
+            if (!assigned) {
+              console.warn('所有位置都已填满，跳过这张图片');
+            }
+            
           } catch (error) {
-            console.error('上传失败:', error);
-            alert('上传失败：' + error.message + '\n请检查网络或联系管理员');
-          } finally {
-            hideLoading();
+            console.error(`上传第 ${i+1} 张图片失败:`, error);
           }
         }
+        
+        hideLoading();
+        showToast(`上传成功 ${successCount}/${files.length} 张`);
       };
       
       input.click();
