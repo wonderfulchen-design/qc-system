@@ -53,7 +53,7 @@ try {
 
 Write-Host ""
 Write-Host "[3/8] 创建部署目录..." -ForegroundColor Yellow
-$deployPath = "C:\qc-system"
+$deployPath = "D:\qc-system"
 if (-not (Test-Path $deployPath)) {
     New-Item -ItemType Directory -Path $deployPath | Out-Null
     Write-Host "✓ 创建目录：$deployPath" -ForegroundColor Green
