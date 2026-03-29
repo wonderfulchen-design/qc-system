@@ -301,6 +301,22 @@ app.add_middleware(
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 app.mount("/qc-mobile", StaticFiles(directory="mobile", html=True), name="mobile")
 
+# 企业微信验证文件需要放在根目录
+# 单独挂载验证文件到根路径
+from pathlib import Path
+import os
+
+@app.get("/WW_verify_bNelEDV6Mj48InFj.txt")
+async def wechat_verification_file():
+    """企业微信域名验证文件"""
+    from fastapi.responses import PlainTextResponse
+    verification_file = Path("mobile") / "WW_verify_bNelEDV6Mj48InFj.txt"
+    if verification_file.exists():
+        content = verification_file.read_text().strip()
+        return PlainTextResponse(content, media_type="text/plain")
+    else:
+        return PlainTextResponse("bNelEDV6Mj48InFj", media_type="text/plain")
+
 # 根路径重定向到问题列表页
 @app.get("/")
 async def root_redirect():
