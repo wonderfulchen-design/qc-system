@@ -12,7 +12,7 @@ pymysql.install_as_MySQLdb()
 from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile, Form, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict
@@ -36,6 +36,9 @@ from sqlalchemy.sql import func
 # Config
 from dotenv import load_dotenv
 load_dotenv()
+
+# WeChat OAuth2
+from backend.wechat_auth import get_wechat_oauth2_url, get_user_info, get_user_detail
 
 # ==================== Configuration ====================
 
@@ -358,6 +361,114 @@ async def get_current_user_info(
     current_user: QCUser = Depends(get_current_user)
 ):
     return current_user
+
+
+# ==================== WeChat OAuth2 Login ====================
+
+@app.get("/auth/wechat/login")
+async def wechat_login():
+    """
+    跳转到企业微信授权页面
+    """
+    import uuid
+    redirect_uri = f"{WECHAT_REDIRECT_URI}/auth/wechat/callback"
+    state = str(uuid.uuid4())  # 生成随机 state 防止 CSRF
+    
+    # 存储 state 到 session 或缓存（这里简化处理，实际应该存储）
+    oauth_url = get_wechat_oauth2_url(redirect_uri, state)
+    
+    return RedirectResponse(url=oauth_url)
+
+
+@app.get("/auth/wechat/callback")
+async def wechat_callback(
+    code: str,
+    state: str,
+    db: Session = Depends(get_db)
+):
+    """
+    企业微信回调处理
+    
+    1. 用 code 换取用户信息
+    2. 自动创建或更新用户
+    3. 登录并跳转回首页
+    """
+    try:
+        # 1. 获取用户信息
+        user_info = await get_user_info(code)
+        wechat_userid = user_info.get('userid')
+        
+        if not wechat_userid:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "获取用户信息失败"}
+            )
+        
+        # 2. 尝试获取详细信息（需要读取权限）
+        try:
+            detail_info = await get_user_detail(wechat_userid)
+            user_name = detail_info.get('name', wechat_userid)
+            user_department = detail_info.get('department', [])
+            user_mobile = detail_info.get('mobile', '')
+            user_email = detail_info.get('email', '')
+        except:
+            # 如果没有权限，只用基本信息
+            user_name = wechat_userid
+            user_department = []
+            user_mobile = ''
+            user_email = ''
+        
+        # 3. 查找或创建用户
+        user = db.query(QCUser).filter(QCUser.username == wechat_userid).first()
+        
+        if not user:
+            # 创建新用户
+            import hashlib
+            random_password = hashlib.sha256(str(uuid.uuid4()).encode()).hexdigest()
+            
+            user = QCUser(
+                username=wechat_userid,
+                password_hash=random_password,  # 随机密码，实际用企业微信登录
+                real_name=user_name,
+                nickname=user_name,
+                department=str(user_department[0]) if user_department else '',
+                phone=user_mobile,
+                email=user_email,
+                role='qc',
+                status=1,
+                avatar_url=detail_info.get('avatar', '') if 'detail_info' in locals() else ''
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        else:
+            # 更新用户信息
+            user.real_name = user_name
+            user.nickname = user_name
+            if user_department:
+                user.department = str(user_department[0])
+            if user_mobile:
+                user.phone = user_mobile
+            if user_email:
+                user.email = user_email
+            db.commit()
+        
+        # 4. 生成登录 token
+        from datetime import timedelta
+        access_token = create_access_token(
+            data={"sub": str(user.id), "username": user.username, "role": user.role},
+            expires_delta=timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+        )
+        
+        # 5. 跳转到登录成功页面（带上 token）
+        redirect_url = f"{WECHAT_REDIRECT_URI}/qc-mobile/index.html?token={access_token}&wechat_login=1"
+        return RedirectResponse(url=redirect_url)
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"登录失败：{str(e)}"}
+        )
 
 
 @app.post("/api/batches/import-csv")

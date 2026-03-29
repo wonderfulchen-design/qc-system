@@ -300,7 +300,6 @@
       <a href="#" onclick="alert('请联系管理员重置密码')">忘记密码？</a>
     </div>
 
-    <!-- 企业微信登录暂未启用 - 需要备案域名
     <div class="divider"><span>或</span></div>
 
     <div class="wecom-login">
@@ -309,7 +308,6 @@
         企业微信快捷登录
       </button>
     </div>
-    -->
 
     <div class="tips">
       <div class="tips-title">💡 温馨提示</div>
@@ -466,28 +464,56 @@
       }
     });
 
-    // 企业微信授权登录
-    async function wecomAuthLogin(code) {
+    // 企业微信快捷登录 - 跳转到授权页面
+    function wecomLogin() {
+      // 跳转到企业微信 OAuth2 授权页面
+      window.location.href = `${API_BASE}/auth/wechat/login`;
+    }
+
+    // 检查是否是微信登录回调（带 token 参数）
+    window.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      const wechatLogin = urlParams.get('wechat_login');
+      
+      if (token && wechatLogin === '1') {
+        // 企业微信登录成功，保存 token
+        try {
+          localStorage.setItem('token', token);
+          // 获取用户信息
+          fetchUserInfo(token);
+        } catch (e) {
+          console.error('保存 token 失败:', e);
+        }
+      }
+    });
+
+    // 获取用户信息
+    async function fetchUserInfo(token) {
       try {
-        const response = await fetch(`${API_BASE}/api/auth/wecom`, {
-          method: 'POST',
+        const response = await fetch(`${API_BASE}/api/user/me`, {
           headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ code })
+            'Authorization': `Bearer ${token}`
+          }
         });
 
-        const data = await response.json();
-
         if (response.ok) {
-          localStorage.setItem('token', data.access_token);
-          localStorage.setItem('userInfo', JSON.stringify(data.user));
-          window.location.href = '/qc-mobile/index.html';
+          const user = await response.json();
+          localStorage.setItem('userInfo', JSON.stringify({
+            user_id: user.id,
+            username: user.username,
+            real_name: user.real_name || user.username,
+            role: user.role
+          }));
+          showSuccess('企业微信登录成功！正在跳转...');
+          setTimeout(() => {
+            window.location.href = '/qc-mobile/index.html';
+          }, 1000);
         } else {
-          showError('企业微信登录失败：' + (data.detail || '未知错误'));
+          showError('获取用户信息失败');
         }
       } catch (error) {
-        console.error('企业微信登录错误:', error);
+        console.error('获取用户信息错误:', error);
         showError('网络错误，请稍后重试');
       }
     }
