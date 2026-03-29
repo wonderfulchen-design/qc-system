@@ -467,7 +467,7 @@
       selectedSolution = element.dataset.solution;
     }
 
-    // 上传图片
+    // 上传图片（七牛云直传）
     async function uploadImage(type) {
       const input = document.createElement('input');
       input.type = 'file';
@@ -483,39 +483,58 @@
           const compressedSize = (compressedFile.size / 1024).toFixed(1);
           console.log(`图片压缩：${originalSize}KB → ${compressedSize}KB`);
           
-          // 上传到服务器
-          const formData = new FormData();
-          formData.append('file', compressedFile);
-          
           const token = localStorage.getItem('token');
           
           try {
-            const response = await fetch(`${API_BASE}/uploads`, {
-              method: 'POST',
+            // 1. 获取七牛云上传凭证
+            const tokenResponse = await fetch(`${API_BASE}/api/qiniu/upload-token`, {
               headers: {
                 'Authorization': `Bearer ${token}`
-              },
+              }
+            });
+            
+            if (!tokenResponse.ok) {
+              throw new Error('获取上传凭证失败');
+            }
+            
+            const tokenData = await tokenResponse.json();
+            const uploadToken = tokenData.token;
+            // 容错处理：如果 domain 不完整，使用默认值
+            let qiniuDomain = tokenData.domain || 'https://lswsampleimg.qiniudn.com';
+            if (!qiniuDomain.startsWith('http')) {
+              qiniuDomain = 'https://lswsampleimg.qiniudn.com';
+            }
+            const qiniuPrefix = tokenData.prefix;
+            
+            // 2. 直传七牛云
+            const formData = new FormData();
+            formData.append('token', uploadToken);
+            formData.append('file', compressedFile);
+            
+            const uploadResponse = await fetch('http://upload-z2.qiniup.com', {
+              method: 'POST',
               body: formData
             });
             
-            if (response.ok) {
-              const result = await response.json();
-              const url = result.url;
-              
-              images[type] = compressedFile;
-              imageUrls[type] = url;
-              
-              const uploadItem = document.getElementById(`upload-${type}`);
-              uploadItem.classList.add('has-image');
-              uploadItem.innerHTML = `
-                <img src="${url}">
-                <button type="button" class="remove-btn" onclick="removeImage('${type}', event)">×</button>
-              `;
-              
-              showToast('上传成功！');
-            } else {
-              alert('上传失败，请重试');
+            if (!uploadResponse.ok) {
+              throw new Error('上传到七牛云失败');
             }
+            
+            const uploadResult = await uploadResponse.json();
+            // 构建完整的七牛云 URL
+            const url = `${qiniuDomain}${qiniuPrefix}${uploadResult.key}`;
+            
+            images[type] = compressedFile;
+            imageUrls[type] = url;
+            
+            const uploadItem = document.getElementById(`upload-${type}`);
+            uploadItem.classList.add('has-image');
+            uploadItem.innerHTML = `
+              <img src="${url}">
+              <button type="button" class="remove-btn" onclick="removeImage('${type}', event)">×</button>
+            `;
+            
+            showToast('上传成功！');
           } catch (error) {
             console.error('上传失败:', error);
             alert('上传失败，请重试');

@@ -515,6 +515,13 @@
             
             const qiniuConfig = await tokenResp.json();
             
+            // 容错处理：如果 domain 不完整，使用默认值
+            let domain = qiniuConfig.domain || 'https://lswsampleimg.qiniudn.com';
+            if (!domain.startsWith('http')) {
+              domain = 'https://lswsampleimg.qiniudn.com';
+            }
+            qiniuConfig.domain = domain;
+            
             // 2. 生成文件名（使用时间戳 + 随机数）
             const fileExt = file.name.split('.').pop() || 'jpg';
             const timestamp = new Date().getTime();

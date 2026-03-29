@@ -51,7 +51,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 QINIU_ACCESS_KEY = os.getenv("QINIU_ACCESS_KEY", "")
 QINIU_SECRET_KEY = os.getenv("QINIU_SECRET_KEY", "")
 QINIU_BUCKET = os.getenv("QINIU_BUCKET", "lswsampleimg")
-QINIU_DOMAIN = os.getenv("QINIU_DOMAIN", "http://qp2bc4f1j.hn-bkt.clouddn.com").rstrip("/") + "/"
+QINIU_DOMAIN = os.getenv("QINIU_DOMAIN", "https://lswsampleimg.qiniudn.com").rstrip("/") + "/"
 QINIU_PREFIX = os.getenv("QINIU_PREFIX", "qcImg/")
 
 # 企业微信配置
