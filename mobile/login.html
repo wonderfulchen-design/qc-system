@@ -419,26 +419,6 @@
       }
     });
 
-    // 企业微信登录
-    async function wecomLogin() {
-      try {
-        // 从后端获取企业微信授权 URL
-        const response = await fetch(`${API_BASE}/api/auth/wechat-url`);
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.detail || '获取授权 URL 失败');
-        }
-        
-        const data = await response.json();
-        
-        // 跳转到企业微信授权
-        window.location.href = data.auth_url;
-      } catch (error) {
-        alert('企业微信登录暂时不可用：' + error.message + '\n\n请使用账号密码登录');
-      }
-    }
-
     // 显示错误消息
     function showError(message) {
       const errorMsg = document.getElementById('errorMessage');
@@ -452,17 +432,6 @@
       successMsg.textContent = '✅ ' + message;
       successMsg.style.display = 'block';
     }
-
-    // 检查 URL 中的 code 参数 (企业微信回调)
-    window.addEventListener('DOMContentLoaded', function() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      
-      if (code) {
-        // 企业微信授权回调，调用后端换取用户信息
-        wecomAuthLogin(code);
-      }
-    });
 
     // 企业微信快捷登录 - 跳转到授权页面
     function wecomLogin() {
