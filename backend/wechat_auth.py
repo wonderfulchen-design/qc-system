@@ -39,7 +39,7 @@ def get_wechat_oauth2_url(redirect_uri: str, state: str = "") -> str:
         'appid': WECHAT_CORP_ID,
         'redirect_uri': urllib.parse.quote(redirect_uri, safe=''),
         'response_type': 'code',
-        'scope': 'snsapi_base',
+        'scope': 'snsapi_privateinfo',
         'state': state,
         'agentid': WECHAT_AGENT_ID
     }
