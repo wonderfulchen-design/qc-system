@@ -7,6 +7,7 @@ All error messages in English to avoid encoding issues
 
 # MySQL 兼容层 - 使用 PyMySQL 替代 MySQLdb
 import pymysql
+import uuid
 pymysql.install_as_MySQLdb()
 
 from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile, Form, Request
