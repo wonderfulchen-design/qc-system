@@ -553,8 +553,22 @@
     // API 基础 URL
     const API_BASE = window.location.origin;
 
+    // 从 URL 中提取并保存 token（企业微信登录回调）
+    function saveTokenFromUrl() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      
+      if (token) {
+        localStorage.setItem('token', token);
+        // 清除 URL 中的 token 参数
+        window.history.replaceState({}, document.title, window.location.pathname);
+        console.log('Token saved successfully');
+      }
+    }
+
     // 页面加载时检查登录状态
     window.addEventListener('DOMContentLoaded', function() {
+      saveTokenFromUrl(); // 先保存 token
       checkLogin();
       loadDashboardData();
       updateDate();
