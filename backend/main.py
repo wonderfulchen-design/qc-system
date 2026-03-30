@@ -1,12 +1,13 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 QC Quality Management System - Backend API
 All error messages in English to avoid encoding issues
 """
 
-# MySQL 兼容层 - 使用 PyMySQL 替代 MySQLdb
+# MySQL 鍏煎灞?- 浣跨敤 PyMySQL 鏇夸唬 MySQLdb
 import pymysql
+import uuid
 pymysql.install_as_MySQLdb()
 
 from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile, Form, Request
@@ -50,24 +51,24 @@ ACCESS_TOKEN_EXPIRE_DAYS = int(os.getenv("ACCESS_TOKEN_EXPIRE_DAYS", "1"))
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "/app/uploads"))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-# 七牛云配置
+# 涓冪墰浜戦厤缃?
 QINIU_ACCESS_KEY = os.getenv("QINIU_ACCESS_KEY", "")
 QINIU_SECRET_KEY = os.getenv("QINIU_SECRET_KEY", "")
 QINIU_BUCKET = os.getenv("QINIU_BUCKET", "lswsampleimg")
 QINIU_DOMAIN = os.getenv("QINIU_DOMAIN", "https://lswsampleimg.qiniudn.com").rstrip("/") + "/"
 QINIU_PREFIX = os.getenv("QINIU_PREFIX", "qcImg/")
 
-# 企业微信配置
+# 浼佷笟寰俊閰嶇疆
 WECHAT_CORP_ID = os.getenv("WECHAT_CORP_ID", "")
 WECHAT_AGENT_ID = os.getenv("WECHAT_AGENT_ID", "")
 WECHAT_SECRET = os.getenv("WECHAT_SECRET", "")
 WECHAT_REDIRECT_URI = os.getenv("WECHAT_REDIRECT_URI", "")
 WECHAT_WEBHOOK_URL = os.getenv("WECHAT_WEBHOOK_URL", "")
 
-# 图片上传限制
+# 鍥剧墖涓婁紶闄愬埗
 MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB
-MAX_IMAGE_WIDTH = 4096  # 最大宽度
-MAX_IMAGE_HEIGHT = 4096  # 最大高度
+MAX_IMAGE_WIDTH = 4096  # 鏈€澶у搴?
+MAX_IMAGE_HEIGHT = 4096  # 鏈€澶ч珮搴?
 ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 
 # ==================== Database Models ====================
@@ -84,7 +85,7 @@ class QCUser(Base):
     username = Column(String(32), unique=True, index=True, nullable=False)
     password_hash = Column(String(128), nullable=False)
     real_name = Column(String(32))
-    nickname = Column(String(32))  # 昵称，用于评论显示
+    nickname = Column(String(32))  # 鏄电О锛岀敤浜庤瘎璁烘樉绀?
     phone = Column(String(16))
     email = Column(String(64))
     department = Column(String(32), index=True)
@@ -102,8 +103,8 @@ class ProductBatch(Base):
     batch_no = Column(String(32), unique=True, index=True)
     factory_name = Column(String(64), index=True)
     goods_no = Column(String(32), index=True)
-    merchandiser = Column(String(32))  # 订单跟单员
-    designer = Column(String(32))  # 设计师
+    merchandiser = Column(String(32))  # 璁㈠崟璺熷崟鍛?
+    designer = Column(String(32))  # 璁捐甯?
 
 
 class QualityIssue(Base):
@@ -122,7 +123,7 @@ class QualityIssue(Base):
     factory_name = Column(String(64), index=True)
     batch_no = Column(String(32), index=True)
     pattern_batch = Column(String(32))
-    merchandiser = Column(String(32))  # 订单跟单员
+    merchandiser = Column(String(32))  # 璁㈠崟璺熷崟鍛?
     designer = Column(String(32))
     handler = Column(String(32))
     batch_source = Column(String(32))
@@ -181,14 +182,14 @@ class UserResponse(BaseModel):
 class IssueCreate(BaseModel):
     goods_no: str
     factory_name: str
-    batch_no: str  # 波次号必填
+    batch_no: str  # 娉㈡鍙峰繀濉?
     issue_type: str
     issue_desc: Optional[str] = None
     solution_type: Optional[str] = None
     compensation_amount: Optional[float] = 0
     product_image: Optional[str] = None
     issue_images: Optional[List[str]] = None
-    # QC 信息由后端自动填充，不需要前端传递
+    # QC 淇℃伅鐢卞悗绔嚜鍔ㄥ～鍏咃紝涓嶉渶瑕佸墠绔紶閫?
 
 
 class IssueResponse(BaseModel):
@@ -297,18 +298,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 静态文件挂载
+# 闈欐€佹枃浠舵寕杞?
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 app.mount("/qc-mobile", StaticFiles(directory="mobile", html=True), name="mobile")
 
-# 企业微信验证文件需要放在根目录
-# 单独挂载验证文件到根路径
+# 浼佷笟寰俊楠岃瘉鏂囦欢闇€瑕佹斁鍦ㄦ牴鐩綍
+# 鍗曠嫭鎸傝浇楠岃瘉鏂囦欢鍒版牴璺緞
 from pathlib import Path
 import os
 
 @app.get("/WW_verify_bNelEDV6Mj48InFj.txt")
 async def wechat_verification_file():
-    """企业微信域名验证文件"""
+    """浼佷笟寰俊鍩熷悕楠岃瘉鏂囦欢"""
     from fastapi.responses import PlainTextResponse
     verification_file = Path("mobile") / "WW_verify_bNelEDV6Mj48InFj.txt"
     if verification_file.exists():
@@ -317,10 +318,10 @@ async def wechat_verification_file():
     else:
         return PlainTextResponse("bNelEDV6Mj48InFj", media_type="text/plain")
 
-# 根路径重定向到问题列表页
+# 鏍硅矾寰勯噸瀹氬悜鍒伴棶棰樺垪琛ㄩ〉
 @app.get("/")
 async def root_redirect():
-    """根路径自动跳转到问题列表页"""
+    """鏍硅矾寰勮嚜鍔ㄨ烦杞埌闂鍒楄〃椤?""
     from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/qc-mobile/issue-list.html")
 
@@ -329,15 +330,15 @@ async def root_redirect():
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """全局异常处理，确保返回 JSON 格式"""
+    """鍏ㄥ眬寮傚父澶勭悊锛岀‘淇濊繑鍥?JSON 鏍煎紡"""
     return JSONResponse(
         status_code=500,
-        content={"detail": f"服务器错误：{str(exc)}"}
+        content={"detail": f"鏈嶅姟鍣ㄩ敊璇細{str(exc)}"}
     )
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
-    """HTTP 异常处理"""
+    """HTTP 寮傚父澶勭悊"""
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail}
@@ -384,13 +385,13 @@ async def get_current_user_info(
 @app.get("/auth/wechat/login")
 async def wechat_login():
     """
-    跳转到企业微信授权页面
+    璺宠浆鍒颁紒涓氬井淇℃巿鏉冮〉闈?
     """
     import uuid
     redirect_uri = f"{WECHAT_REDIRECT_URI}/auth/wechat/callback"
-    state = str(uuid.uuid4())  # 生成随机 state 防止 CSRF
+    state = str(uuid.uuid4())  # 鐢熸垚闅忔満 state 闃叉 CSRF
     
-    # 存储 state 到 session 或缓存（这里简化处理，实际应该存储）
+    # 瀛樺偍 state 鍒?session 鎴栫紦瀛橈紙杩欓噷绠€鍖栧鐞嗭紝瀹為檯搴旇瀛樺偍锛?
     oauth_url = get_wechat_oauth2_url(redirect_uri, state)
     
     return RedirectResponse(url=oauth_url)
@@ -403,24 +404,24 @@ async def wechat_callback(
     db: Session = Depends(get_db)
 ):
     """
-    企业微信回调处理
+    浼佷笟寰俊鍥炶皟澶勭悊
     
-    1. 用 code 换取用户信息
-    2. 自动创建或更新用户
-    3. 登录并跳转回首页
+    1. 鐢?code 鎹㈠彇鐢ㄦ埛淇℃伅
+    2. 鑷姩鍒涘缓鎴栨洿鏂扮敤鎴?
+    3. 鐧诲綍骞惰烦杞洖棣栭〉
     """
     try:
-        # 1. 获取用户信息
+        # 1. 鑾峰彇鐢ㄦ埛淇℃伅
         user_info = await get_user_info(code)
         wechat_userid = user_info.get('userid')
         
         if not wechat_userid:
             return JSONResponse(
                 status_code=400,
-                content={"detail": "获取用户信息失败"}
+                content={"detail": "鑾峰彇鐢ㄦ埛淇℃伅澶辫触"}
             )
         
-        # 2. 尝试获取详细信息（需要读取权限）
+        # 2. 灏濊瘯鑾峰彇璇︾粏淇℃伅锛堥渶瑕佽鍙栨潈闄愶級
         try:
             detail_info = await get_user_detail(wechat_userid)
             user_name = detail_info.get('name', wechat_userid)
@@ -428,23 +429,23 @@ async def wechat_callback(
             user_mobile = detail_info.get('mobile', '')
             user_email = detail_info.get('email', '')
         except:
-            # 如果没有权限，只用基本信息
+            # 濡傛灉娌℃湁鏉冮檺锛屽彧鐢ㄥ熀鏈俊鎭?
             user_name = wechat_userid
             user_department = []
             user_mobile = ''
             user_email = ''
         
-        # 3. 查找或创建用户
+        # 3. 鏌ユ壘鎴栧垱寤虹敤鎴?
         user = db.query(QCUser).filter(QCUser.username == wechat_userid).first()
         
         if not user:
-            # 创建新用户
+            # 鍒涘缓鏂扮敤鎴?
             import hashlib
             random_password = hashlib.sha256(str(uuid.uuid4()).encode()).hexdigest()
             
             user = QCUser(
                 username=wechat_userid,
-                password_hash=random_password,  # 随机密码，实际用企业微信登录
+                password_hash=random_password,  # 闅忔満瀵嗙爜锛屽疄闄呯敤浼佷笟寰俊鐧诲綍
                 real_name=user_name,
                 nickname=user_name,
                 department=str(user_department[0]) if user_department else '',
@@ -458,7 +459,7 @@ async def wechat_callback(
             db.commit()
             db.refresh(user)
         else:
-            # 更新用户信息
+            # 鏇存柊鐢ㄦ埛淇℃伅
             user.real_name = user_name
             user.nickname = user_name
             if user_department:
@@ -469,21 +470,21 @@ async def wechat_callback(
                 user.email = user_email
             db.commit()
         
-        # 4. 生成登录 token
+        # 4. 鐢熸垚鐧诲綍 token
         from datetime import timedelta
         access_token = create_access_token(
             data={"sub": str(user.id), "username": user.username, "role": user.role},
             expires_delta=timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
         )
         
-        # 5. 跳转到登录成功页面（带上 token）
+        # 5. 璺宠浆鍒扮櫥褰曟垚鍔熼〉闈紙甯︿笂 token锛?
         redirect_url = f"{WECHAT_REDIRECT_URI}/qc-mobile/index.html?token={access_token}&wechat_login=1"
         return RedirectResponse(url=redirect_url)
         
     except Exception as e:
         return JSONResponse(
             status_code=500,
-            content={"detail": f"登录失败：{str(e)}"}
+            content={"detail": f"鐧诲綍澶辫触锛歿str(e)}"}
         )
 
 
@@ -493,12 +494,12 @@ async def import_batches_from_csv(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """从 CSV 文件批量导入波次数据"""
+    """浠?CSV 鏂囦欢鎵归噺瀵煎叆娉㈡鏁版嵁"""
     import pandas as pd
     import io
     
     try:
-        # 读取 CSV 文件
+        # 璇诲彇 CSV 鏂囦欢
         contents = await file.read()
         df = pd.read_csv(io.BytesIO(contents), encoding='utf-8-sig')
         
@@ -508,18 +509,18 @@ async def import_batches_from_csv(
         
         for idx, row in df.iterrows():
             try:
-                batch_no = str(row.get('波次号', '')).strip()
-                factory_name = str(row.get('工厂', '')).strip()
-                goods_no = str(row.get('货品编码', '')).strip()
-                merchandiser = str(row.get('订单跟单员', '')).strip() if pd.notna(row.get('订单跟单员')) else None
-                designer = str(row.get('设计师', '')).strip() if pd.notna(row.get('设计师')) else None
+                batch_no = str(row.get('娉㈡鍙?, '')).strip()
+                factory_name = str(row.get('宸ュ巶', '')).strip()
+                goods_no = str(row.get('璐у搧缂栫爜', '')).strip()
+                merchandiser = str(row.get('璁㈠崟璺熷崟鍛?, '')).strip() if pd.notna(row.get('璁㈠崟璺熷崟鍛?)) else None
+                designer = str(row.get('璁捐甯?, '')).strip() if pd.notna(row.get('璁捐甯?)) else None
                 
                 if not batch_no or not factory_name or not goods_no:
                     error_count += 1
-                    errors.append({"row": idx + 1, "error": "缺少必填字段"})
+                    errors.append({"row": idx + 1, "error": "缂哄皯蹇呭～瀛楁"})
                     continue
                 
-                # 检查是否已存在
+                # 妫€鏌ユ槸鍚﹀凡瀛樺湪
                 existing = db.query(ProductBatch).filter(
                     ProductBatch.batch_no == batch_no
                 ).first()
@@ -549,7 +550,7 @@ async def import_batches_from_csv(
         
         return {
             "success": True,
-            "message": f"导入完成！成功：{success_count}, 失败：{error_count}",
+            "message": f"瀵煎叆瀹屾垚锛佹垚鍔燂細{success_count}, 澶辫触锛歿error_count}",
             "success_count": success_count,
             "error_count": error_count,
             "errors": errors[:10]
@@ -557,7 +558,7 @@ async def import_batches_from_csv(
         
     except Exception as e:
         db.rollback()
-        return {"success": False, "message": f"导入失败：{str(e)}"}
+        return {"success": False, "message": f"瀵煎叆澶辫触锛歿str(e)}"}
 
 
 @app.get("/api/init-db")
@@ -565,20 +566,20 @@ async def import_batches_from_csv(
 async def initialize_database(
     db: Session = Depends(get_db)
 ):
-    """初始化数据库 - 创建表和 admin 账号"""
+    """鍒濆鍖栨暟鎹簱 - 鍒涘缓琛ㄥ拰 admin 璐﹀彿"""
     try:
-        # 创建所有表
+        # 鍒涘缓鎵€鏈夎〃
         Base.metadata.create_all(bind=engine)
         
-        # 检查是否已有 admin 账号
+        # 妫€鏌ユ槸鍚﹀凡鏈?admin 璐﹀彿
         admin = db.query(QCUser).filter(QCUser.username == "admin").first()
         
         if not admin:
-            # 创建 admin 账号（密码：admin123）
+            # 鍒涘缓 admin 璐﹀彿锛堝瘑鐮侊細admin123锛?
             admin = QCUser(
                 username="admin",
                 password_hash=hash_password("admin123"),
-                real_name="系统管理员",
+                real_name="绯荤粺绠＄悊鍛?,
                 role="admin",
                 status=1
             )
@@ -587,7 +588,7 @@ async def initialize_database(
             
             return {
                 "success": True,
-                "message": "数据库初始化成功！admin 账号已创建。",
+                "message": "鏁版嵁搴撳垵濮嬪寲鎴愬姛锛乤dmin 璐﹀彿宸插垱寤恒€?,
                 "admin": {
                     "username": "admin",
                     "password": "admin123"
@@ -596,13 +597,13 @@ async def initialize_database(
         else:
             return {
                 "success": True,
-                "message": "数据库已初始化，admin 账号已存在。"
+                "message": "鏁版嵁搴撳凡鍒濆鍖栵紝admin 璐﹀彿宸插瓨鍦ㄣ€?
             }
     except Exception as e:
         db.rollback()
         return {
             "success": False,
-            "message": f"初始化失败：{str(e)}"
+            "message": f"鍒濆鍖栧け璐ワ細{str(e)}"
         }
 
 
@@ -612,14 +613,14 @@ async def update_nickname(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """更新用户昵称"""
+    """鏇存柊鐢ㄦ埛鏄电О"""
     nickname = nickname_data.get("nickname", "").strip()
     
     if not nickname:
-        raise HTTPException(status_code=400, detail="昵称不能为空")
+        raise HTTPException(status_code=400, detail="鏄电О涓嶈兘涓虹┖")
     
     if len(nickname) > 32:
-        raise HTTPException(status_code=400, detail="昵称长度不能超过 32 个字符")
+        raise HTTPException(status_code=400, detail="鏄电О闀垮害涓嶈兘瓒呰繃 32 涓瓧绗?)
     
     current_user.nickname = nickname
     db.commit()
@@ -629,18 +630,18 @@ async def update_nickname(
 
 
 # ==================== Batch Query Endpoints ====================
-# 注意：/api/batches/options 必须在 /api/batches/{batch_no} 之前定义
+# 娉ㄦ剰锛?api/batches/options 蹇呴』鍦?/api/batches/{batch_no} 涔嬪墠瀹氫箟
 
 @app.get("/api/batches/options", response_model=Dict[str, List[str]])
 async def get_batch_options(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取所有唯一的工厂、设计师、波次号、跟单员选项"""
-    # 查询所有波次数据
+    """鑾峰彇鎵€鏈夊敮涓€鐨勫伐鍘傘€佽璁″笀銆佹尝娆″彿銆佽窡鍗曞憳閫夐」"""
+    # 鏌ヨ鎵€鏈夋尝娆℃暟鎹?
     batches = db.query(ProductBatch).all()
     
-    # 提取唯一值
+    # 鎻愬彇鍞竴鍊?
     factories = sorted(list(set([b.factory_name for b in batches if b.factory_name])))
     designers = sorted(list(set([b.designer for b in batches if b.designer])))
     merchandisers = sorted(list(set([b.merchandiser for b in batches if b.merchandiser])))
@@ -661,11 +662,11 @@ async def search_batches(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """搜索波次（添加缓存）"""
+    """鎼滅储娉㈡锛堟坊鍔犵紦瀛橈級"""
     if not batch_no and not goods_no:
         return []
     
-    # 简单的内存缓存（生产环境建议用 Redis）
+    # 绠€鍗曠殑鍐呭瓨缂撳瓨锛堢敓浜х幆澧冨缓璁敤 Redis锛?
     cache_key = f"search:{batch_no}:{goods_no}"
     if hasattr(search_batches, 'cache') and cache_key in search_batches.cache:
         return search_batches.cache[cache_key]
@@ -677,7 +678,7 @@ async def search_batches(
     if goods_no:
         query = query.filter(ProductBatch.goods_no.like(f"%{goods_no}%"))
     
-    # 限制返回数量，提高查询速度
+    # 闄愬埗杩斿洖鏁伴噺锛屾彁楂樻煡璇㈤€熷害
     results = query.order_by(ProductBatch.id.desc()).limit(10).all()
     
     response_data = [
@@ -691,12 +692,12 @@ async def search_batches(
         for r in results
     ]
     
-    # 缓存结果（最多保留 100 条）
+    # 缂撳瓨缁撴灉锛堟渶澶氫繚鐣?100 鏉★級
     if not hasattr(search_batches, 'cache'):
         search_batches.cache = {}
     search_batches.cache[cache_key] = response_data
     if len(search_batches.cache) > 100:
-        # 删除最旧的缓存
+        # 鍒犻櫎鏈€鏃х殑缂撳瓨
         oldest_key = next(iter(search_batches.cache))
         del search_batches.cache[oldest_key]
     
@@ -715,7 +716,7 @@ async def list_batches(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """分页查询波次工厂商品编码关系列表"""
+    """鍒嗛〉鏌ヨ娉㈡宸ュ巶鍟嗗搧缂栫爜鍏崇郴鍒楄〃"""
     query = db.query(ProductBatch)
     
     if batch_no:
@@ -752,7 +753,7 @@ async def list_batches(
 async def test_batch_endpoint(
     current_user: QCUser = Depends(get_current_user)
 ):
-    """测试端点"""
+    """娴嬭瘯绔偣"""
     return {"message": "Batch API is working", "user": current_user.username}
 
 
@@ -762,7 +763,7 @@ async def get_batch_by_no(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """根据波次号查询单个波次信息（必须在所有具体路径之后）"""
+    """鏍规嵁娉㈡鍙锋煡璇㈠崟涓尝娆′俊鎭紙蹇呴』鍦ㄦ墍鏈夊叿浣撹矾寰勪箣鍚庯級"""
     batch = db.query(ProductBatch).filter(
         ProductBatch.batch_no == batch_no
     ).first()
@@ -785,7 +786,7 @@ async def batch_import_batches(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """批量导入/更新波次关系"""
+    """鎵归噺瀵煎叆/鏇存柊娉㈡鍏崇郴"""
     success_count = 0
     error_count = 0
     errors = []
@@ -832,14 +833,14 @@ async def create_or_update_batch(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """创建或更新波次关系（波次号唯一，存在则更新）"""
+    """鍒涘缓鎴栨洿鏂版尝娆″叧绯伙紙娉㈡鍙峰敮涓€锛屽瓨鍦ㄥ垯鏇存柊锛?""
     try:
         existing = db.query(ProductBatch).filter(
             ProductBatch.batch_no == batch_data.batch_no
         ).first()
         
         if existing:
-            # 更新现有记录
+            # 鏇存柊鐜版湁璁板綍
             existing.factory_name = batch_data.factory_name
             existing.goods_no = batch_data.goods_no
             db.commit()
@@ -850,7 +851,7 @@ async def create_or_update_batch(
                 goods_no=existing.goods_no
             )
         else:
-            # 创建新记录
+            # 鍒涘缓鏂拌褰?
             new_batch = ProductBatch(
                 batch_no=batch_data.batch_no,
                 factory_name=batch_data.factory_name,
@@ -866,7 +867,7 @@ async def create_or_update_batch(
             )
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"创建失败：{str(e)}")
+        raise HTTPException(status_code=500, detail=f"鍒涘缓澶辫触锛歿str(e)}")
 
 
 @app.put("/api/batches/{batch_no}", response_model=BatchResponse)
@@ -876,7 +877,7 @@ async def update_batch(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """更新波次关系（部分更新）"""
+    """鏇存柊娉㈡鍏崇郴锛堥儴鍒嗘洿鏂帮級"""
     batch = db.query(ProductBatch).filter(
         ProductBatch.batch_no == batch_no
     ).first()
@@ -905,7 +906,7 @@ async def delete_batch(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """删除波次关系"""
+    """鍒犻櫎娉㈡鍏崇郴"""
     batch = db.query(ProductBatch).filter(
         ProductBatch.batch_no == batch_no
     ).first()
@@ -924,7 +925,7 @@ async def delete_batch(
 @app.get("/api/issues", response_model=Dict[str, Any])
 async def get_issues(
     page: int = 1,
-    page_size: int = 100,  # 增加到 100 用于前端筛选
+    page_size: int = 100,  # 澧炲姞鍒?100 鐢ㄤ簬鍓嶇绛涢€?
     factory: Optional[str] = None,
     issue_type: Optional[str] = None,
     current_user: QCUser = Depends(get_current_user),
@@ -938,13 +939,13 @@ async def get_issues(
         query = query.filter(QualityIssue.issue_type == issue_type)
     
     total = query.count()
-    # 使用 ID 降序排序（ID 越大越新），确保排序稳定
+    # 浣跨敤 ID 闄嶅簭鎺掑簭锛圛D 瓒婂ぇ瓒婃柊锛夛紝纭繚鎺掑簭绋冲畾
     issues = query.order_by(QualityIssue.id.desc())\
                   .offset((page - 1) * page_size)\
                   .limit(page_size)\
                   .all()
     
-    # 批量查询波次号对应的跟单员和设计师
+    # 鎵归噺鏌ヨ娉㈡鍙峰搴旂殑璺熷崟鍛樺拰璁捐甯?
     batch_nos = list(set([i.batch_no for i in issues if i.batch_no]))
     batch_info_map = {}
     if batch_nos:
@@ -988,18 +989,18 @@ async def create_issue(
     import time
     
     try:
-        # 确保 issue_no 唯一性：时间戳 + 随机数 + 用户 ID
+        # 纭繚 issue_no 鍞竴鎬э細鏃堕棿鎴?+ 闅忔満鏁?+ 鐢ㄦ埛 ID
         issue_no = f"Q{datetime.now().strftime('%Y%m%d%H%M%S')}{str(uuid.uuid4())[:6].upper()}{current_user.id:02d}"
         
-        # 如果重复，重试生成
+        # 濡傛灉閲嶅锛岄噸璇曠敓鎴?
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                # 检查是否已存在
+                # 妫€鏌ユ槸鍚﹀凡瀛樺湪
                 existing = db.query(QualityIssue).filter(QualityIssue.issue_no == issue_no).first()
                 if existing:
                     issue_no = f"Q{datetime.now().strftime('%Y%m%d%H%M%S%f')}{str(uuid.uuid4())[:4].upper()}{current_user.id:02d}"
-                    time.sleep(0.001)  # 微_sleep 避免重复
+                    time.sleep(0.001)  # 寰甠sleep 閬垮厤閲嶅
                 else:
                     break
             except:
@@ -1025,7 +1026,7 @@ async def create_issue(
         db.commit()
         db.refresh(db_issue)
         
-        # 从波次号查询 merchandiser 和 designer
+        # 浠庢尝娆″彿鏌ヨ merchandiser 鍜?designer
         merchandiser = ''
         designer = ''
         if db_issue.batch_no:
@@ -1034,15 +1035,15 @@ async def create_issue(
                 merchandiser = batch.merchandiser or ''
                 designer = batch.designer or ''
                 
-                # 更新问题记录的 merchandiser 和 designer
+                # 鏇存柊闂璁板綍鐨?merchandiser 鍜?designer
                 db_issue.merchandiser = merchandiser
                 db_issue.designer = designer
                 db.commit()
         
-        # 获取问题图片列表
+        # 鑾峰彇闂鍥剧墖鍒楄〃
         issue_images = db_issue.issue_images or []
         
-        # 发送企业微信通知
+        # 鍙戦€佷紒涓氬井淇￠€氱煡
         await send_wechat_notification(
             issue_no=db_issue.issue_no,
             batch_no=db_issue.batch_no,
@@ -1061,8 +1062,8 @@ async def create_issue(
         
     except Exception as e:
         db.rollback()
-        # 返回 JSON 格式的错误
-        raise HTTPException(status_code=500, detail=f"提交失败：{str(e)}")
+        # 杩斿洖 JSON 鏍煎紡鐨勯敊璇?
+        raise HTTPException(status_code=500, detail=f"鎻愪氦澶辫触锛歿str(e)}")
 
 
 @app.get("/api/issues/{issue_id}")
@@ -1071,7 +1072,7 @@ async def get_issue_detail(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取单个问题详情（兼容数字 ID）"""
+    """鑾峰彇鍗曚釜闂璇︽儏锛堝吋瀹规暟瀛?ID锛?""
     issue = db.query(QualityIssue).filter(QualityIssue.id == issue_id).first()
     
     if not issue:
@@ -1107,13 +1108,13 @@ async def get_issue_by_number(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取单个问题详情（使用问题编码 - 更安全）"""
+    """鑾峰彇鍗曚釜闂璇︽儏锛堜娇鐢ㄩ棶棰樼紪鐮?- 鏇村畨鍏級"""
     issue = db.query(QualityIssue).filter(QualityIssue.issue_no == issue_no).first()
     
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
     
-    # 根据波次号查询 product_batches 表获取 merchandiser 和 designer
+    # 鏍规嵁娉㈡鍙锋煡璇?product_batches 琛ㄨ幏鍙?merchandiser 鍜?designer
     merchandiser = '-'
     designer = issue.designer or '-'
     
@@ -1121,11 +1122,11 @@ async def get_issue_by_number(
         batch_info = db.query(ProductBatch).filter(ProductBatch.batch_no == issue.batch_no).first()
         if batch_info:
             merchandiser = batch_info.merchandiser or '-'
-            # 如果问题表没有设计师，使用波次表的设计师
+            # 濡傛灉闂琛ㄦ病鏈夎璁″笀锛屼娇鐢ㄦ尝娆¤〃鐨勮璁″笀
             if not issue.designer:
                 designer = batch_info.designer or '-'
     
-    # 不暴露数字 ID，只返回问题编码和业务数据
+    # 涓嶆毚闇叉暟瀛?ID锛屽彧杩斿洖闂缂栫爜鍜屼笟鍔℃暟鎹?
     return {
         "issue_no": issue.issue_no,
         "status": issue.status or "pending",
@@ -1141,7 +1142,7 @@ async def get_issue_by_number(
         "batch_no": issue.batch_no,
         "pattern_batch": issue.pattern_batch,
         "designer": designer,
-        "merchandiser": merchandiser,  # 新增订单跟单员字段
+        "merchandiser": merchandiser,  # 鏂板璁㈠崟璺熷崟鍛樺瓧娈?
         "handler": issue.handler,
         "batch_source": issue.batch_source,
         "created_at": issue.created_at.isoformat() if issue.created_at else None,
@@ -1157,13 +1158,13 @@ async def update_issue(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """更新问题"""
+    """鏇存柊闂"""
     issue = db.query(QualityIssue).filter(QualityIssue.id == issue_id).first()
     
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
     
-    # 更新字段
+    # 鏇存柊瀛楁
     issue.goods_no = issue_data.goods_no
     issue.factory_name = issue_data.factory_name
     issue.batch_no = issue_data.batch_no
@@ -1189,14 +1190,14 @@ class CommentResponse(BaseModel):
     id: int
     issue_id: int
     user_id: int
-    username: str  # 保留字段名兼容前端，实际返回昵称
+    username: str  # 淇濈暀瀛楁鍚嶅吋瀹瑰墠绔紝瀹為檯杩斿洖鏄电О
     content: str
     created_at: datetime
     
     class Config:
         from_attributes = True
 
-# 数据库评论模型
+# 鏁版嵁搴撹瘎璁烘ā鍨?
 class IssueComment(Base):
     __tablename__ = "issue_comments"
     
@@ -1216,18 +1217,18 @@ async def get_issue_comments(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取问题的评论列表"""
-    # 获取问题 ID
+    """鑾峰彇闂鐨勮瘎璁哄垪琛?""
+    # 鑾峰彇闂 ID
     issue = db.query(QualityIssue).filter(QualityIssue.issue_no == issue_no).first()
     if not issue:
-        raise HTTPException(status_code=404, detail="问题不存在")
+        raise HTTPException(status_code=404, detail="闂涓嶅瓨鍦?)
     
-    # 从数据库获取评论，按时间排序
+    # 浠庢暟鎹簱鑾峰彇璇勮锛屾寜鏃堕棿鎺掑簭
     issue_comments = db.query(IssueComment).filter(
         IssueComment.issue_id == issue.id
     ).order_by(IssueComment.created_at.asc()).all()
     
-    # 转换为响应格式（使用昵称或用户名）
+    # 杞崲涓哄搷搴旀牸寮忥紙浣跨敤鏄电О鎴栫敤鎴峰悕锛?
     return [
         CommentResponse(
             id=c.id,
@@ -1247,23 +1248,23 @@ async def create_issue_comment(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """创建问题评论"""
-    # 获取问题 ID
+    """鍒涘缓闂璇勮"""
+    # 鑾峰彇闂 ID
     issue = db.query(QualityIssue).filter(QualityIssue.issue_no == issue_no).first()
     if not issue:
-        raise HTTPException(status_code=404, detail="问题不存在")
+        raise HTTPException(status_code=404, detail="闂涓嶅瓨鍦?)
     
-    # 检查评论者是否是订单跟单员
+    # 妫€鏌ヨ瘎璁鸿€呮槸鍚︽槸璁㈠崟璺熷崟鍛?
     is_merchandiser = False
     if issue.batch_no:
         batch_info = db.query(ProductBatch).filter(ProductBatch.batch_no == issue.batch_no).first()
         if batch_info and batch_info.merchandiser:
-            # 检查当前用户的昵称或用户名是否匹配订单跟单员
+            # 妫€鏌ュ綋鍓嶇敤鎴风殑鏄电О鎴栫敤鎴峰悕鏄惁鍖归厤璁㈠崟璺熷崟鍛?
             if (current_user.nickname and current_user.nickname == batch_info.merchandiser) or \
                (current_user.username == batch_info.merchandiser):
                 is_merchandiser = True
     
-    # 创建评论并保存到数据库
+    # 鍒涘缓璇勮骞朵繚瀛樺埌鏁版嵁搴?
     new_comment = IssueComment(
         issue_id=issue.id,
         user_id=current_user.id,
@@ -1273,14 +1274,14 @@ async def create_issue_comment(
     )
     db.add(new_comment)
     
-    # 如果是订单跟单员评论，自动将问题状态改为"已处理"
+    # 濡傛灉鏄鍗曡窡鍗曞憳璇勮锛岃嚜鍔ㄥ皢闂鐘舵€佹敼涓?宸插鐞?
     if is_merchandiser and issue.status != 'resolved':
         issue.status = 'resolved'
     
     db.commit()
     db.refresh(new_comment)
     
-    # 返回评论（使用昵称或用户名）
+    # 杩斿洖璇勮锛堜娇鐢ㄦ樀绉版垨鐢ㄦ埛鍚嶏級
     return CommentResponse(
         id=new_comment.id,
         issue_id=new_comment.issue_id,
@@ -1297,31 +1298,31 @@ async def get_qiniu_upload_token(
     current_user: QCUser = Depends(get_current_user)
 ):
     """
-    获取七牛云上传凭证
+    鑾峰彇涓冪墰浜戜笂浼犲嚟璇?
     
-    前端拿到 token 后直接上传到七牛云，返回 CDN 链接
+    鍓嶇鎷垮埌 token 鍚庣洿鎺ヤ笂浼犲埌涓冪墰浜戯紝杩斿洖 CDN 閾炬帴
     """
     if not QINIU_ACCESS_KEY or not QINIU_SECRET_KEY:
-        raise HTTPException(status_code=500, detail="七牛云配置缺失")
+        raise HTTPException(status_code=500, detail="涓冪墰浜戦厤缃己澶?)
     
     try:
         import qiniu.auth
         import qiniu.zone
         from qiniu import Auth
         
-        # 初始化七牛云 Auth
+        # 鍒濆鍖栦竷鐗涗簯 Auth
         auth = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
         
-        # 设置上传策略
-        # 只允许上传到指定前缀目录
+        # 璁剧疆涓婁紶绛栫暐
+        # 鍙厑璁镐笂浼犲埌鎸囧畾鍓嶇紑鐩綍
         put_policy = {
             'scope': f"{QINIU_BUCKET}:{QINIU_PREFIX}",
-            'deadline': int(datetime.now().timestamp()) + 3600,  # 1 小时有效期
-            'insertOnly': 0,  # 允许覆盖同名文件
-            'saveKey': f"{QINIU_PREFIX}$(etag)"  # 使用文件 hash 作为文件名
+            'deadline': int(datetime.now().timestamp()) + 3600,  # 1 灏忔椂鏈夋晥鏈?
+            'insertOnly': 0,  # 鍏佽瑕嗙洊鍚屽悕鏂囦欢
+            'saveKey': f"{QINIU_PREFIX}$(etag)"  # 浣跨敤鏂囦欢 hash 浣滀负鏂囦欢鍚?
         }
         
-        # 生成上传凭证
+        # 鐢熸垚涓婁紶鍑瘉
         upload_token = auth.upload_token(QINIU_BUCKET, policy=put_policy)
         
         return {
@@ -1332,9 +1333,9 @@ async def get_qiniu_upload_token(
             "expire": 3600
         }
     except ImportError:
-        raise HTTPException(status_code=500, detail="请安装七牛云 SDK: pip install qiniu")
+        raise HTTPException(status_code=500, detail="璇峰畨瑁呬竷鐗涗簯 SDK: pip install qiniu")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"生成上传凭证失败：{str(e)}")
+        raise HTTPException(status_code=500, detail=f"鐢熸垚涓婁紶鍑瘉澶辫触锛歿str(e)}")
 
 
 # ==================== Upload Endpoint (Local) ====================
@@ -1345,21 +1346,21 @@ async def upload_file(
     current_user: QCUser = Depends(get_current_user)
 ):
     """
-    上传图片文件
+    涓婁紶鍥剧墖鏂囦欢
     
-    限制:
-    - 文件大小：最大 5MB
-    - 文件类型：JPEG, PNG, GIF, WebP
-    - 分辨率：最大 4096x4096
+    闄愬埗:
+    - 鏂囦欢澶у皬锛氭渶澶?5MB
+    - 鏂囦欢绫诲瀷锛欽PEG, PNG, GIF, WebP
+    - 鍒嗚鲸鐜囷細鏈€澶?4096x4096
     """
-    # 1. 验证文件类型
+    # 1. 楠岃瘉鏂囦欢绫诲瀷
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(
             status_code=400,
-            detail=f"不支持的图片类型。允许的类型：{', '.join(ALLOWED_IMAGE_TYPES)}"
+            detail=f"涓嶆敮鎸佺殑鍥剧墖绫诲瀷銆傚厑璁哥殑绫诲瀷锛歿', '.join(ALLOWED_IMAGE_TYPES)}"
         )
     
-    # 2. 读取文件内容并验证大小
+    # 2. 璇诲彇鏂囦欢鍐呭骞堕獙璇佸ぇ灏?
     content = await file.read()
     file_size = len(content)
     
@@ -1368,13 +1369,13 @@ async def upload_file(
         max_mb = MAX_IMAGE_SIZE / (1024 * 1024)
         raise HTTPException(
             status_code=413,  # Payload Too Large
-            detail=f"图片过大 ({size_mb:.1f}MB)，最大允许 {max_mb}MB"
+            detail=f"鍥剧墖杩囧ぇ ({size_mb:.1f}MB)锛屾渶澶у厑璁?{max_mb}MB"
         )
     
     if file_size == 0:
-        raise HTTPException(status_code=400, detail="空文件")
+        raise HTTPException(status_code=400, detail="绌烘枃浠?)
     
-    # 3. 验证图片尺寸（可选，需要 PIL）
+    # 3. 楠岃瘉鍥剧墖灏哄锛堝彲閫夛紝闇€瑕?PIL锛?
     try:
         from PIL import Image
         import io
@@ -1385,23 +1386,23 @@ async def upload_file(
         if width > MAX_IMAGE_WIDTH or height > MAX_IMAGE_HEIGHT:
             raise HTTPException(
                 status_code=400,
-                detail=f"图片分辨率过大 ({width}x{height})，最大允许 {MAX_IMAGE_WIDTH}x{MAX_IMAGE_HEIGHT}"
+                detail=f"鍥剧墖鍒嗚鲸鐜囪繃澶?({width}x{height})锛屾渶澶у厑璁?{MAX_IMAGE_WIDTH}x{MAX_IMAGE_HEIGHT}"
             )
     except ImportError:
-        # PIL 未安装，跳过尺寸验证
+        # PIL 鏈畨瑁咃紝璺宠繃灏哄楠岃瘉
         pass
     except HTTPException:
         raise
     except Exception as e:
-        # 图片损坏或无法读取 - 仅记录日志，不阻止上传
+        # 鍥剧墖鎹熷潖鎴栨棤娉曡鍙?- 浠呰褰曟棩蹇楋紝涓嶉樆姝笂浼?
         import logging
-        logging.warning(f'图片验证失败：{e}，但允许上传')
-        # 不抛出异常，允许上传
+        logging.warning(f'鍥剧墖楠岃瘉澶辫触锛歿e}锛屼絾鍏佽涓婁紶')
+        # 涓嶆姏鍑哄紓甯革紝鍏佽涓婁紶
     
-    # 4. 保存文件
+    # 4. 淇濆瓨鏂囦欢
     file_ext = os.path.splitext(file.filename)[1]
     if not file_ext:
-        # 根据内容类型推断扩展名
+        # 鏍规嵁鍐呭绫诲瀷鎺ㄦ柇鎵╁睍鍚?
         ext_map = {
             'image/jpeg': '.jpg',
             'image/png': '.png',
@@ -1434,26 +1435,26 @@ async def get_stats_summary(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取统计摘要 - 支持时间范围筛选"""
+    """鑾峰彇缁熻鎽樿 - 鏀寔鏃堕棿鑼冨洿绛涢€?""
     query = db.query(QualityIssue)
     
-    # 时间范围筛选
+    # 鏃堕棿鑼冨洿绛涢€?
     if days:
         from datetime import timedelta
         start_date = datetime.now() - timedelta(days=days)
         query = query.filter(QualityIssue.created_at >= start_date)
     
-    # 总数
+    # 鎬绘暟
     total_count = query.count()
     
-    # 总补偿金额
+    # 鎬昏ˉ鍋块噾棰?
     total_compensation = db.query(func.sum(QualityIssue.compensation_amount)).scalar() or 0
     
-    # 工厂数量
+    # 宸ュ巶鏁伴噺
     factory_count = query.filter(QualityIssue.factory_name != None).distinct(QualityIssue.factory_name).count()
     
-    # 解决率
-    solved_count = query.filter(QualityIssue.status.in_(['solved', 'completed', '已解决'])).count()
+    # 瑙ｅ喅鐜?
+    solved_count = query.filter(QualityIssue.status.in_(['solved', 'completed', '宸茶В鍐?])).count()
     solve_rate = (solved_count / total_count * 100) if total_count > 0 else 0
     
     return {
@@ -1472,14 +1473,14 @@ async def get_stats_by_factory(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """按工厂统计 - TOP N"""
+    """鎸夊伐鍘傜粺璁?- TOP N"""
     query = db.query(
         QualityIssue.factory_name,
         func.count(QualityIssue.id).label('count'),
         func.sum(QualityIssue.compensation_amount).label('total_compensation')
     )
     
-    # 时间范围筛选
+    # 鏃堕棿鑼冨洿绛涢€?
     if days:
         from datetime import timedelta
         start_date = datetime.now() - timedelta(days=days)
@@ -1509,8 +1510,8 @@ async def get_stats_by_type(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """按问题类型统计"""
-    # 先获取总数
+    """鎸夐棶棰樼被鍨嬬粺璁?""
+    # 鍏堣幏鍙栨€绘暟
     base_query = db.query(QualityIssue)
     if days:
         from datetime import timedelta
@@ -1519,7 +1520,7 @@ async def get_stats_by_type(
     
     total_count = base_query.count()
     
-    # 按类型分组统计
+    # 鎸夌被鍨嬪垎缁勭粺璁?
     results = db.query(
         QualityIssue.issue_type,
         func.count(QualityIssue.id).label('count'),
@@ -1550,10 +1551,10 @@ async def get_stats_by_platform(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """按平台统计"""
+    """鎸夊钩鍙扮粺璁?""
     from sqlalchemy import distinct
     
-    # 先获取总数
+    # 鍏堣幏鍙栨€绘暟
     base_query = db.query(QualityIssue)
     if days:
         from datetime import timedelta
@@ -1562,7 +1563,7 @@ async def get_stats_by_platform(
     
     total_count = base_query.count()
     
-    # 按平台分组统计 - 使用明确的 group_by
+    # 鎸夊钩鍙板垎缁勭粺璁?- 浣跨敤鏄庣‘鐨?group_by
     results = db.query(
         QualityIssue.platform,
         func.count(QualityIssue.id).label('count')
@@ -1591,7 +1592,7 @@ async def get_monthly_trend(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """按月趋势统计 - 近 N 个月"""
+    """鎸夋湀瓒嬪娍缁熻 - 杩?N 涓湀"""
     from sqlalchemy import extract
     
     cutoff_date = datetime.now() - timedelta(days=months * 30)
@@ -1627,7 +1628,7 @@ async def get_stats_by_status(
     current_user: QCUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """按状态统计"""
+    """鎸夌姸鎬佺粺璁?""
     results = db.query(
         QualityIssue.status,
         func.count(QualityIssue.id).label('count')
@@ -1667,29 +1668,29 @@ async def root():
 # ==================== WeChat Work Notification ====================
 
 async def send_wechat_notification(issue_no: str, batch_no: str, factory_name: str, goods_no: str, merchandiser: str, designer: str, issue_type: str, product_image: str, issue_images: list, username: str, created_at: datetime):
-    """发送企业微信通知"""
+    """鍙戦€佷紒涓氬井淇￠€氱煡"""
     if not WECHAT_WEBHOOK_URL:
         return
     
     try:
-        # 获取第一张问题图片
+        # 鑾峰彇绗竴寮犻棶棰樺浘鐗?
         first_issue_image = issue_images[0] if issue_images and len(issue_images) > 0 else None
         
-        # 构建消息内容
-        content = f"""📝 新问题通知
+        # 鏋勫缓娑堟伅鍐呭
+        content = f"""馃摑 鏂伴棶棰橀€氱煡
 
-🔢 波次号：{batch_no or '无'}
-🏭 工厂：{factory_name or '未知'}
-👔 跟单：{merchandiser or '无'}
-👨‍🎨 设计师：{designer or '无'}
-📦 货品编码：{goods_no or '未知'}
-🏷️ 问题类型：{issue_type}
-👤 提交人：{username}
-🕐 提交时间：{created_at.strftime('%Y-%m-%d %H:%M') if created_at else '刚刚'}
+馃敘 娉㈡鍙凤細{batch_no or '鏃?}
+馃彮 宸ュ巶锛歿factory_name or '鏈煡'}
+馃憯 璺熷崟锛歿merchandiser or '鏃?}
+馃懆鈥嶐煄?璁捐甯堬細{designer or '鏃?}
+馃摝 璐у搧缂栫爜锛歿goods_no or '鏈煡'}
+馃彿锔?闂绫诲瀷锛歿issue_type}
+馃懁 鎻愪氦浜猴細{username}
+馃晲 鎻愪氦鏃堕棿锛歿created_at.strftime('%Y-%m-%d %H:%M') if created_at else '鍒氬垰'}
 
-🔗 查看详情：{WECHAT_REDIRECT_URI}/qc-mobile/issue-detail.html?no={urllib.parse.quote(issue_no)}"""
+馃敆 鏌ョ湅璇︽儏锛歿WECHAT_REDIRECT_URI}/qc-mobile/issue-detail.html?no={urllib.parse.quote(issue_no)}"""
         
-        # 如果有图片，发送图文消息
+        # 濡傛灉鏈夊浘鐗囷紝鍙戦€佸浘鏂囨秷鎭?
         if first_issue_image:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -1699,8 +1700,8 @@ async def send_wechat_notification(issue_no: str, batch_no: str, factory_name: s
                         "news": {
                             "articles": [
                                 {
-                                    "title": f"📝 新问题通知 - {factory_name or '未知工厂'}",
-                                    "description": f"波次号：{batch_no or '无'}\n问题类型：{issue_type}\n提交人：{username}",
+                                    "title": f"馃摑 鏂伴棶棰橀€氱煡 - {factory_name or '鏈煡宸ュ巶'}",
+                                    "description": f"娉㈡鍙凤細{batch_no or '鏃?}\n闂绫诲瀷锛歿issue_type}\n鎻愪氦浜猴細{username}",
                                     "url": f"{WECHAT_REDIRECT_URI}/qc-mobile/issue-detail.html?no={urllib.parse.quote(issue_no)}",
                                     "picurl": first_issue_image
                                 }
@@ -1713,11 +1714,11 @@ async def send_wechat_notification(issue_no: str, batch_no: str, factory_name: s
                 if response.status_code == 200:
                     result = response.json()
                     if result.get("errcode") == 0:
-                        print(f"✅ 企业微信推送成功（带图）：{issue_no}")
+                        print(f"鉁?浼佷笟寰俊鎺ㄩ€佹垚鍔燂紙甯﹀浘锛夛細{issue_no}")
                     else:
-                        print(f"❌ 企业微信推送失败：{result}")
+                        print(f"鉂?浼佷笟寰俊鎺ㄩ€佸け璐ワ細{result}")
         else:
-            # 没有图片，发送文本消息
+            # 娌℃湁鍥剧墖锛屽彂閫佹枃鏈秷鎭?
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     WECHAT_WEBHOOK_URL,
@@ -1733,15 +1734,15 @@ async def send_wechat_notification(issue_no: str, batch_no: str, factory_name: s
                 if response.status_code == 200:
                     result = response.json()
                     if result.get("errcode") == 0:
-                        print(f"✅ 企业微信推送成功（文本）：{issue_no}")
+                        print(f"鉁?浼佷笟寰俊鎺ㄩ€佹垚鍔燂紙鏂囨湰锛夛細{issue_no}")
                     else:
-                        print(f"❌ 企业微信推送失败：{result}")
+                        print(f"鉂?浼佷笟寰俊鎺ㄩ€佸け璐ワ細{result}")
     except Exception as e:
-        print(f"❌ 发送企业微信通知失败：{e}")
+        print(f"鉂?鍙戦€佷紒涓氬井淇￠€氱煡澶辫触锛歿e}")
 
 
-# 挂载静态文件目录（在 app 创建后）
-# 使用 ONCE 标记确保只挂载一次
+# 鎸傝浇闈欐€佹枃浠剁洰褰曪紙鍦?app 鍒涘缓鍚庯級
+# 浣跨敤 ONCE 鏍囪纭繚鍙寕杞戒竴娆?
 if not hasattr(app, '_uploads_mounted'):
     try:
         app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
