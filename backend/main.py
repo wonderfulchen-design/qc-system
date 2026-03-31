@@ -451,11 +451,14 @@ async def wechat_callback(
             import hashlib
             random_password = hashlib.sha256(str(uuid.uuid4()).encode()).hexdigest()
             
+            # 优先使用中文名作为昵称，如果获取失败则用 userid
+            display_name = user_name if user_name != wechat_userid else wechat_userid
+            
             user = QCUser(
                 username=wechat_userid,
                 password_hash=random_password,  # 随机密码，实际用企业微信登录
                 real_name=user_name,
-                nickname=user_name,
+                nickname=display_name,  # 使用中文名作为昵称
                 department=str(user_department[0]) if user_department else '',
                 phone=user_mobile,
                 email=user_email,
@@ -467,9 +470,11 @@ async def wechat_callback(
             db.commit()
             db.refresh(user)
         else:
-            # 更新用户信息
+            # 更新用户信息 - 只更新 real_name，不覆盖 nickname（除非 nickname 还是 userid）
             user.real_name = user_name
-            user.nickname = user_name
+            # 如果当前昵称等于 userid（英文），则更新为中文名
+            if user.nickname == wechat_userid:
+                user.nickname = user_name
             if user_department:
                 user.department = str(user_department[0])
             if user_mobile:
