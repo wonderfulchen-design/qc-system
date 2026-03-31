@@ -135,6 +135,17 @@
       loadIssueDetail();
       loadComments();
       loadUserInfo();  // 加载用户信息（包括昵称）
+      
+      // 添加图片点击事件监听器
+      document.addEventListener('click', function(e) {
+        const galleryItem = e.target.closest('.gallery-item');
+        if (galleryItem) {
+          const imgUrl = galleryItem.getAttribute('data-img');
+          if (imgUrl) {
+            showImage(imgUrl);
+          }
+        }
+      });
     });
 
     function checkLogin() {
@@ -452,7 +463,7 @@
           <div class="card-title">📦 商品图片</div>
           <div class="image-gallery" style="grid-template-columns: repeat(1, 1fr); max-width: 400px; margin: 0 auto;">
             ${data.product_image ? `
-              <div class="gallery-item" onclick="showImage('${data.product_image}')" style="aspect-ratio: 1;">
+              <div class="gallery-item" data-img="${data.product_image.replace(/"/g, '&quot;')}" style="aspect-ratio: 1;">
                 <img src="${data.product_image}" alt="商品图">
                 <div class="label">商品图</div>
               </div>
@@ -464,7 +475,7 @@
           <div class="card-title">📷 问题图片</div>
           <div class="image-gallery">
             ${data.issue_images && data.issue_images.length > 0 ? data.issue_images.map((img, i) => `
-              <div class="gallery-item" onclick="showImage('${img}')">
+              <div class="gallery-item" data-img="${img.replace(/"/g, '&quot;')}">
                 <img src="${img}" alt="问题图${i+1}">
                 <div class="label">问题图${i+1}</div>
               </div>
