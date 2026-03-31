@@ -73,7 +73,15 @@ ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 
 # ==================== Database Models ====================
 
-engine = create_engine(DATABASE_URL)
+# 数据库连接池配置 - 防止 "MySQL server has gone away" 错误
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,        # 连接前检查是否有效
+    pool_recycle=3600,         # 1 小时后回收连接
+    pool_size=10,              # 连接池大小
+    max_overflow=20,           # 最大溢出连接数
+    pool_timeout=30            # 获取连接超时
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
