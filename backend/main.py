@@ -290,6 +290,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ==================== Static Files ====================
+
+# 挂载静态文件目录
+app.mount("/qc-mobile", StaticFiles(directory="mobile", html=True), name="mobile")
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR, html=True), name="uploads")
+
 
 # ==================== Dependencies ====================
 
@@ -354,6 +360,14 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+
+# ==================== Root Redirect ====================
+
+@app.get("/")
+async def root_redirect():
+    """根路径自动跳转到问题列表页"""
+    return RedirectResponse(url="/qc-mobile/issue-list.html")
 
 
 # ==================== WeChat OAuth2 Login ====================
